@@ -39,6 +39,12 @@
             z-index: 100;
         }
 
+        .screen-status {
+            color: #ffca28;
+            font-weight: bold;
+            display: none;
+        }
+
         /* Главная карточка */
         .dashboard {
             background: #1e1e1e;
@@ -142,6 +148,7 @@
 
     <div class="top-bar">
         <span id="clock">00:00</span>
+        <span class="screen-status" id="screenStatus">☀️ Экран: ON</span>
         <span id="connStatus">🔴 Отключено</span>
     </div>
 
@@ -150,7 +157,7 @@
             <span id="icon">💤</span>
         </div>
         <h1 id="title">Система спит</h1>
-        <p id="subtitle">Необходимо активировать пульт для приема сигналов в фоновом режиме.</p>
+        <p id="subtitle">Активируйте пульт. Можно включить свою музыку, оповещение сработает поверх нее.</p>
 
         <button id="activateBtn" class="btn btn-activate">▶ Активировать пульт</button>
         <button id="stopBtn" class="btn btn-stop">ПРИНЯТЬ ВЫЗОВ</button>
@@ -175,7 +182,6 @@
         const db = getDatabase(app);
         const statusRef = ref(db, 'cashier_call/status');
 
-        // Элементы DOM
         const activateBtn = document.getElementById('activateBtn');
         const stopBtn = document.getElementById('stopBtn');
         const title = document.getElementById('title');
@@ -184,6 +190,7 @@
         const body = document.getElementById('body');
         const connStatus = document.getElementById('connStatus');
         const clockEl = document.getElementById('clock');
+        const screenStatus = document.getElementById('screenStatus');
 
         // Часы
         setInterval(() => {
@@ -191,30 +198,52 @@
             clockEl.textContent = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         }, 1000);
 
-        // Аудио объекты
+        // Только сирена, без фонового "тихого" звука
         const sirenAudio = new Audio("./siren.mp3");
         sirenAudio.loop = true;
         sirenAudio.preload = "auto";
 
-        // "Бесшумный" трек для поддержания жизни вкладки в фоне
-        const silentWav = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
-        const backgroundAudio = new Audio(silentWav);
-        backgroundAudio.loop = true;
-
         let soundEnabled = false;
+        let wakeLock = null;
+
+        // --- ЖЕЛЕЗНОЕ УДЕРЖАНИЕ ЭКРАНА ---
+        async function keepScreenAwake() {
+            if (!soundEnabled) return; 
+            
+            try {
+                if ('wakeLock' in navigator) {
+                    if (wakeLock !== null) return; 
+                    
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    screenStatus.style.display = 'inline';
+                    screenStatus.style.color = '#ffca28';
+                    
+                    wakeLock.addEventListener('release', () => {
+                        wakeLock = null;
+                        screenStatus.style.color = '#888'; 
+                    });
+                }
+            } catch (err) {
+                console.log("Wake Lock заблокирован браузером:", err);
+                screenStatus.style.display = 'none';
+            }
+        }
+
+        // Восстанавливаем блокировку экрана при любом касании
+        document.addEventListener('pointerdown', keepScreenAwake);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') keepScreenAwake();
+        });
 
         // 1. АКТИВАЦИЯ СИСТЕМЫ
         activateBtn.addEventListener('click', async () => {
             try {
-                // Запрос разрешений на уведомления
+                // Разрешения на уведомления
                 if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
                     await Notification.requestPermission();
                 }
 
-                // Запускаем бесшумный трек для фона
-                await backgroundAudio.play();
-                
-                // Подготавливаем сирену (разблокировка AudioContext)
+                // Просто "прогреваем" сирену, чтобы браузер разрешил ей играть позже
                 await sirenAudio.play();
                 sirenAudio.pause();
                 sirenAudio.currentTime = 0;
@@ -223,10 +252,10 @@
                 activateBtn.style.display = 'none';
                 
                 setReadyState();
-                requestWakeLock();
+                keepScreenAwake();
 
             } catch (err) {
-                alert("Ошибка активации: " + err.message + "\nУбедитесь, что файл siren.mp3 находится в той же папке.");
+                alert("Ошибка: " + err.message + "\nПроверь файл siren.mp3");
                 console.error(err);
             }
         });
@@ -257,53 +286,39 @@
             
             stopBtn.style.display = 'block'; 
 
-            // Переключаем аудио
-            backgroundAudio.pause();
-            sirenAudio.play().catch(e => console.error("Звук заблокирован:", e));
+            // Включаем сирену (твоя фоновая музыка может приглушиться или стать на паузу в зависимости от настроек телефона)
+            sirenAudio.play().catch(e => console.error(e));
 
-            // Вибрация
             if (navigator.vibrate) navigator.vibrate([1000, 500, 1000, 500, 1000]);
 
-            // Системное уведомление
             try {
                 if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification("🚨 ВЫЗОВ ПЕРСОНАЛА!", {
-                        body: "Вас ожидают. Откройте пульт.",
+                    new Notification("🚨 ВЫЗОВ!", {
+                        body: "Вас ожидают.",
                         icon: "https://cdn-icons-png.flaticon.com/512/1086/1086581.png",
                         requireInteraction: true
                     });
                 }
-            } catch(e) { console.log("Уведомления не поддерживаются в этом режиме"); }
-
-            // Управление через шторку плеера
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: '🚨 ВЫЗОВ ПЕРСОНАЛА',
-                    artist: 'Ожидают обслуживания',
-                });
-                navigator.mediaSession.setActionHandler('pause', confirmReset);
-            }
+            } catch(e) {}
         }
 
         // 4. СБРОС ТРЕВОГИ
         stopBtn.addEventListener('click', confirmReset);
 
         function confirmReset() {
-            // Мгновенная визуальная и звуковая реакция для пользователя
             stopAlarmLocal();
             
-            // Отправка данных на сервер
             set(statusRef, {
                 is_calling: false,
                 timestamp: Date.now()
             }).catch(err => {
-                console.error("Ошибка сброса в базе:", err);
                 connStatus.textContent = "⚠️ Ошибка связи";
                 connStatus.style.color = "#ff4444";
             });
+            
+            keepScreenAwake();
         }
 
-        // Локальная остановка интерфейса и звуков
         function stopAlarmLocal() {
             body.classList.remove('alert-mode');
             sirenAudio.pause();
@@ -315,33 +330,14 @@
             
             if (soundEnabled) {
                 setReadyState();
-                // Возвращаем фоновый тихий звук
-                backgroundAudio.play().catch(() => {}); 
             }
         }
 
         function setReadyState() {
             title.textContent = "Ожидание вызова";
-            subtitle.textContent = "Пульт активен. Экран можно погасить.";
+            subtitle.textContent = "Пульт активен. Экран не погаснет. Можно слушать музыку в других приложениях.";
             icon.textContent = "👂";
         }
-
-        // --- Удержание экрана ---
-        let wakeLock = null;
-        async function requestWakeLock() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    wakeLock.addEventListener('release', () => { wakeLock = null; });
-                }
-            } catch (err) { console.log("Wake Lock error:", err); }
-        }
-        
-        document.addEventListener('visibilitychange', async () => {
-            if (wakeLock === null && document.visibilityState === 'visible' && soundEnabled) {
-                await requestWakeLock();
-            }
-        });
 
     </script>
 </body>
