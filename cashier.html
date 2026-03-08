@@ -3,91 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Пульт Сотрудника</title>
+    <title>POS-Терминал Сотрудника</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
 
         * { box-sizing: border-box; }
 
         body {
-            margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center;
-            justify-content: center; height: 100vh; background-color: #121212; color: #ffffff;
-            font-family: 'Roboto', sans-serif; transition: background-color 0.3s; overflow: hidden;
+            margin: 0; padding: 0; 
+            background-color: #121212; color: #ffffff;
+            font-family: 'Roboto', sans-serif; 
+            transition: background-color 0.3s; 
+            overflow-x: hidden;
+            user-select: none;
+            /* Предотвращение зума на мобильных */
+            touch-action: manipulation; 
         }
 
-        .top-bar { position: absolute; top: 0; width: 100%; padding: 15px 20px; display: flex; justify-content: space-between; background: rgba(0, 0, 0, 0.5); font-size: 14px; color: #888; z-index: 100; }
+        /* --- ВЕРХНЯЯ ПАНЕЛЬ --- */
+        .top-bar { 
+            position: fixed; top: 0; width: 100%; padding: 15px 20px; 
+            display: flex; justify-content: space-between; 
+            background: rgba(0, 0, 0, 0.8); font-size: 14px; color: #888; z-index: 100; 
+            backdrop-filter: blur(10px); border-bottom: 1px solid #333;
+        }
         .screen-status { color: #ffca28; font-weight: bold; display: none; }
 
-        .dashboard {
-            background: #1e1e1e; padding: 30px; border-radius: 24px; text-align: center;
-            width: 90%; max-width: 420px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-            border: 1px solid #333; display: flex; flex-direction: column; align-items: center;
+        /* --- ЭКРАН АКТИВАЦИИ --- */
+        .activation-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background: #121212; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 200;
+        }
+        .btn-activate {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32); color: white;
+            padding: 20px 40px; border: none; border-radius: 16px; font-size: 20px; font-weight: bold;
+            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3); cursor: pointer; transition: transform 0.2s;
+        }
+        .btn-activate:active { transform: scale(0.95); }
+
+        /* --- ОСНОВНОЙ РАБОЧИЙ СТОЛ (МОДУЛИ) --- */
+        .workspace {
+            display: none; /* Покажется после активации */
+            padding: 70px 20px 20px;
+            min-height: 100vh;
+            display: flex; gap: 20px; flex-wrap: wrap;
+            justify-content: center; align-items: stretch;
         }
 
-        .icon-circle { width: 80px; height: 80px; border-radius: 50%; background: #2a2a2a; display: flex; justify-content: center; align-items: center; font-size: 40px; margin-bottom: 15px; }
-        h1 { margin: 0 0 10px; font-size: 24px; }
-        p { color: #aaa; margin-bottom: 20px; font-size: 14px; }
+        .module {
+            background: #1e1e1e; padding: 30px; border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333;
+            flex: 1; min-width: 300px; max-width: 450px;
+            display: flex; flex-direction: column; align-items: center;
+        }
 
-        .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: all 0.2s; color: white; margin-bottom: 10px; }
-        .btn:active { transform: scale(0.95); }
-        .btn-activate { background: #4CAF50; }
-        .btn-stop { background: #ff4444; display: none; animation: pulse-btn 1s infinite alternate; }
+        /* --- МОДУЛЬ 1: ВЫЗОВЫ --- */
+        .call-module { transition: border-color 0.3s, box-shadow 0.3s; justify-content: center; }
+        .icon-circle { width: 90px; height: 90px; border-radius: 50%; background: #2a2a2a; display: flex; justify-content: center; align-items: center; font-size: 45px; margin-bottom: 20px; transition: all 0.3s; }
+        .call-module h1 { margin: 0 0 10px; font-size: 24px; }
+        .call-module p { color: #aaa; margin-bottom: 20px; font-size: 15px; text-align: center; }
+        
+        .btn-stop { 
+            width: 100%; padding: 25px; border: none; border-radius: 16px; font-size: 22px; 
+            font-weight: 900; background: linear-gradient(135deg, #ff4444, #cc0000); color: white; 
+            cursor: pointer; display: none; text-transform: uppercase;
+            animation: pulse-btn 1s infinite alternate; box-shadow: 0 0 30px rgba(255, 68, 68, 0.6);
+        }
+        @keyframes pulse-btn { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
 
-        @keyframes pulse-btn { 0% { transform: scale(1); box-shadow: 0 0 10px #ff4444; } 100% { transform: scale(1.05); box-shadow: 0 0 30px #ff4444; } }
-
+        /* Состояние тревоги */
         .alert-mode { background-color: #3e0000; }
-        .alert-mode .dashboard { border-color: #ff4444; }
+        .alert-mode .call-module { border-color: #ff4444; box-shadow: 0 0 40px rgba(255, 68, 68, 0.4); }
+        .alert-mode .icon-circle { background: #ff4444; animation: shake 0.4s infinite; }
+        @keyframes shake { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(10deg); } 75% { transform: rotate(-10deg); } }
 
-        /* --- БЛОК ЗАПРОСА ЧАЕВЫХ --- */
-        .tips-panel {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #333;
-            width: 100%;
-            display: none; /* Покажем после активации пульта */
-        }
+        /* --- МОДУЛЬ 2: КАССА И ЧАЕВЫЕ --- */
+        .pos-module { display: flex; flex-direction: column; }
+        .pos-header { width: 100%; color: #ffca28; margin: 0 0 15px; font-size: 18px; text-align: left; }
         
-        .tips-input {
-            width: 100%;
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid #555;
-            background: #2a2a2a;
-            color: white;
-            font-size: 18px;
-            text-align: center;
-            margin-bottom: 10px;
-            outline: none;
+        /* Экран калькулятора */
+        .calc-display {
+            width: 100%; background: #0a0a0a; border: 2px solid #444; border-radius: 16px;
+            padding: 20px; font-size: 32px; font-weight: bold; color: #fff; text-align: right;
+            margin-bottom: 20px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.5); font-family: monospace;
         }
-        .tips-input:focus { border-color: #ffca28; }
-        
-        .btn-tips {
-            background: linear-gradient(135deg, #ffca28, #ff8f00);
-            color: #3e2723;
+        .calc-display.error { color: #ff4444; }
+
+        /* Клавиатура (Кейпад) */
+        .keypad {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; margin-bottom: 20px;
         }
+        .key {
+            background: #2a2a2a; color: white; border: none; border-radius: 12px;
+            padding: 18px 0; font-size: 22px; font-weight: bold; cursor: pointer;
+            transition: background 0.1s, transform 0.1s;
+        }
+        .key:active { background: #444; transform: scale(0.92); }
+        .key.action { background: #4e342e; color: #ffca28; }
+        .key.action:active { background: #5d4037; }
+        .key.clear { background: #3e0000; color: #ff4444; }
+        .key.equal { background: #1b5e20; color: #a5d6a7; grid-row: span 2; height: 100%; }
+
+        .btn-send {
+            width: 100%; padding: 20px; border: none; border-radius: 16px; font-size: 18px; 
+            font-weight: bold; background: linear-gradient(135deg, #ffca28, #ff8f00); color: #3e2723;
+            cursor: pointer; text-transform: uppercase; transition: transform 0.2s;
+        }
+        .btn-send:active { transform: scale(0.95); }
 
     </style>
 </head>
 <body id="body">
 
     <div class="top-bar">
-        <span class="screen-status" id="screenStatus">☀️ Экран: ON</span>
+        <span id="clock">00:00</span>
+        <span class="screen-status" id="screenStatus">☀️ ЭКРАН ON</span>
         <span id="connStatus">🔴 Отключено</span>
     </div>
 
-    <div class="dashboard">
-        <div class="icon-circle" id="iconBox"><span id="icon">💤</span></div>
-        <h1 id="title">Система спит</h1>
-        <p id="subtitle">Активируйте пульт.</p>
+    <div class="activation-screen" id="activationScreen">
+        <div style="font-size: 60px; margin-bottom: 20px;">🔒</div>
+        <h2 style="margin-bottom: 30px;">Система ожидает запуска</h2>
+        <button id="activateBtn" class="btn-activate">▶ ВКЛЮЧИТЬ ПУЛЬТ</button>
+    </div>
 
-        <button id="activateBtn" class="btn btn-activate">▶ Активировать</button>
-        <button id="stopBtn" class="btn btn-stop">ПРИНЯТЬ ВЫЗОВ</button>
-
-        <div class="tips-panel" id="tipsPanel">
-            <h3 style="margin: 0 0 10px; font-size: 16px; color: #ffca28;">Запросить чаевые</h3>
-            <input type="number" id="billAmount" class="tips-input" placeholder="Сумма заказа (₽)">
-            <button id="sendTipsBtn" class="btn btn-tips">Отправить на экран</button>
+    <div class="workspace" id="workspace">
+        
+        <div class="module call-module" id="callModule">
+            <div class="icon-circle" id="iconBox"><span id="icon">👂</span></div>
+            <h1 id="title">Ожидание вызова</h1>
+            <p id="subtitle">Все системы работают нормально. Пульт готов к приему сигналов.</p>
+            <button id="stopBtn" class="btn-stop">ПРИНЯТЬ ВЫЗОВ</button>
         </div>
+
+        <div class="module pos-module">
+            <h3 class="pos-header">Сумма заказа для чаевых:</h3>
+            
+            <div class="calc-display" id="calcDisplay">0</div>
+            
+            <div class="keypad">
+                <button class="key" data-val="7">7</button>
+                <button class="key" data-val="8">8</button>
+                <button class="key" data-val="9">9</button>
+                <button class="key clear" data-val="C">C</button>
+                
+                <button class="key" data-val="4">4</button>
+                <button class="key" data-val="5">5</button>
+                <button class="key" data-val="6">6</button>
+                <button class="key action" data-val="DEL">⌫</button>
+                
+                <button class="key" data-val="1">1</button>
+                <button class="key" data-val="2">2</button>
+                <button class="key" data-val="3">3</button>
+                <button class="key action" data-val="+">+</button>
+                
+                <button class="key" data-val="0">0</button>
+                <button class="key" data-val="00">00</button>
+                <button class="key action" data-val="-">-</button>
+                <button class="key equal" data-val="=" style="grid-column: 4; grid-row: 3 / 5;">=</button>
+            </div>
+
+            <button id="sendTipsBtn" class="btn-send">Отправить клиенту ➔</button>
+        </div>
+
     </div>
 
     <script type="module">
@@ -98,10 +178,7 @@
           apiKey: "AIzaSyBa3MKrLHcRPauIyzxgxfNpLUphmehJAkg",
           authDomain: "moon-logistik.firebaseapp.com",
           databaseURL: "https://moon-logistik-default-rtdb.firebaseio.com",
-          projectId: "moon-logistik",
-          storageBucket: "moon-logistik.firebasestorage.app",
-          messagingSenderId: "335239459996",
-          appId: "1:335239459996:web:98a3cd3508767cfde6a959"
+          projectId: "moon-logistik"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -109,13 +186,25 @@
         const statusRef = ref(db, 'cashier_call/status');
         const tipRequestRef = ref(db, 'tips_request');
 
+        // Элементы
+        const body = document.getElementById('body');
+        const activationScreen = document.getElementById('activationScreen');
+        const workspace = document.getElementById('workspace');
         const activateBtn = document.getElementById('activateBtn');
         const stopBtn = document.getElementById('stopBtn');
-        const tipsPanel = document.getElementById('tipsPanel');
-        const sendTipsBtn = document.getElementById('sendTipsBtn');
-        const billAmountInput = document.getElementById('billAmount');
+        const icon = document.getElementById('icon');
         const title = document.getElementById('title');
+        const subtitle = document.getElementById('subtitle');
+        const clockEl = document.getElementById('clock');
+        const connStatus = document.getElementById('connStatus');
+        const screenStatus = document.getElementById('screenStatus');
         
+        // Элементы кассы
+        const calcDisplay = document.getElementById('calcDisplay');
+        const sendTipsBtn = document.getElementById('sendTipsBtn');
+        const keys = document.querySelectorAll('.key');
+
+        // Звук
         const sirenAudio = new Audio("./siren.mp3");
         sirenAudio.loop = true;
         sirenAudio.preload = "auto";
@@ -123,32 +212,145 @@
         let soundEnabled = false;
         let wakeLock = null;
 
+        // Часы
+        setInterval(() => {
+            const now = new Date();
+            clockEl.textContent = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        }, 1000);
+
+        // --- БЛОКИРОВКА ЭКРАНА ---
         async function keepScreenAwake() {
             if (!soundEnabled) return; 
             try {
                 if ('wakeLock' in navigator && wakeLock === null) {
                     wakeLock = await navigator.wakeLock.request('screen');
-                    document.getElementById('screenStatus').style.display = 'inline';
-                    wakeLock.addEventListener('release', () => { wakeLock = null; });
+                    screenStatus.style.display = 'inline';
+                    wakeLock.addEventListener('release', () => { 
+                        wakeLock = null; 
+                        screenStatus.style.display = 'none';
+                    });
                 }
             } catch (err) {}
         }
         document.addEventListener('pointerdown', keepScreenAwake);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') keepScreenAwake();
+        });
 
+        // --- АКТИВАЦИЯ ---
         activateBtn.addEventListener('click', async () => {
             await sirenAudio.play(); sirenAudio.pause(); sirenAudio.currentTime = 0;
             soundEnabled = true;
-            activateBtn.style.display = 'none';
-            tipsPanel.style.display = 'block'; // Показываем панель чаевых
-            title.textContent = "Пульт активен";
+            
+            activationScreen.style.display = 'none';
+            workspace.style.display = 'flex'; // Показываем модули
+            
             keepScreenAwake();
         });
 
-        // Отправка запроса на чаевые
+        // --- ЛОГИКА ВЫЗОВОВ ---
+        onValue(statusRef, (snapshot) => {
+            const data = snapshot.val();
+            const isCalling = data ? data.is_calling : false;
+            
+            connStatus.textContent = "🟢 На связи"; connStatus.style.color = "#4CAF50";
+
+            if (isCalling) {
+                if (soundEnabled) {
+                    body.classList.add('alert-mode');
+                    icon.textContent = "🚨";
+                    title.textContent = "ВАС ВЫЗЫВАЮТ!";
+                    subtitle.textContent = "Подойдите к столику клиента.";
+                    stopBtn.style.display = 'block';
+                    sirenAudio.play().catch(e => {});
+                    if (navigator.vibrate) navigator.vibrate([1000, 500, 1000]);
+                }
+            } else {
+                body.classList.remove('alert-mode');
+                icon.textContent = "👂";
+                title.textContent = "Ожидание вызова";
+                subtitle.textContent = "Все системы работают нормально.";
+                stopBtn.style.display = 'none';
+                sirenAudio.pause(); sirenAudio.currentTime = 0;
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            set(statusRef, { is_calling: false, timestamp: Date.now() });
+        });
+
+        // --- ЛОГИКА КЕЙПАДА (КАЛЬКУЛЯТОРА) ---
+        let calcInput = "";
+        let isEvaluated = false; // Флаг, чтобы понимать, был ли только что нажат "="
+
+        function updateDisplay() {
+            calcDisplay.classList.remove('error');
+            if (calcInput === "") {
+                calcDisplay.textContent = "0";
+            } else {
+                calcDisplay.textContent = calcInput;
+            }
+        }
+
+        keys.forEach(key => {
+            key.addEventListener('click', (e) => {
+                const val = e.target.dataset.val;
+
+                // Если предыдущее действие было "=", и нажали цифру - начинаем ввод заново
+                if (isEvaluated && !['+', '-', '=', 'C', 'DEL'].includes(val)) {
+                    calcInput = "";
+                }
+                isEvaluated = false;
+
+                if (val === 'C') {
+                    calcInput = "";
+                } else if (val === 'DEL') {
+                    calcInput = calcInput.slice(0, -1);
+                } else if (val === '=') {
+                    try {
+                        // Оцениваем простое математическое выражение
+                        // Заменяем возможные ошибки ввода (например двойные плюсы)
+                        let sanitized = calcInput.replace(/[^-()\d/*+.]/g, '');
+                        if (sanitized !== "") {
+                            let result = eval(sanitized);
+                            // Округляем до 2 знаков, если есть копейки, иначе целое
+                            calcInput = Number.isInteger(result) ? String(result) : String(result.toFixed(2));
+                            isEvaluated = true;
+                        }
+                    } catch (err) {
+                        calcInput = "Ошибка";
+                        calcDisplay.classList.add('error');
+                        setTimeout(() => { calcInput = ""; updateDisplay(); }, 1000);
+                        return;
+                    }
+                } else {
+                    // Защита от ввода кучи нулей в начале
+                    if (calcInput === "" && val === "00") return;
+                    if (calcInput === "0" && !['+', '-'].includes(val)) calcInput = ""; 
+                    
+                    calcInput += val;
+                }
+                updateDisplay();
+            });
+        });
+
+        // --- ОТПРАВКА ЧАЕВЫХ ---
         sendTipsBtn.addEventListener('click', () => {
-            const amount = parseFloat(billAmountInput.value);
+            // Если в строке есть нерешенное выражение (например 500+200), решаем его перед отправкой
+            try {
+                let sanitized = calcInput.replace(/[^-()\d/*+.]/g, '');
+                if (sanitized !== "") {
+                    calcInput = String(eval(sanitized));
+                    updateDisplay();
+                }
+            } catch (e) {
+                alert("Неверный формат суммы!"); return;
+            }
+
+            const amount = parseFloat(calcInput);
             if (!amount || amount <= 0) {
-                alert("Введите корректную сумму покупки!");
+                calcDisplay.classList.add('error');
+                setTimeout(() => calcDisplay.classList.remove('error'), 500);
                 return;
             }
 
@@ -159,39 +361,20 @@
                 timestamp: Date.now()
             });
 
-            // Визуальный фидбек для сотрудника
+            // Визуальный фидбек
             const originalText = sendTipsBtn.textContent;
-            sendTipsBtn.textContent = "✔️ Отправлено!";
+            sendTipsBtn.textContent = "✔️ ОТПРАВЛЕНО НА ЭКРАН";
             sendTipsBtn.style.background = "#4CAF50";
             sendTipsBtn.style.color = "white";
-            billAmountInput.value = ""; // очищаем поле
+            
+            calcInput = ""; // Сбрасываем дисплей
+            updateDisplay();
 
             setTimeout(() => {
                 sendTipsBtn.textContent = originalText;
                 sendTipsBtn.style.background = "linear-gradient(135deg, #ffca28, #ff8f00)";
                 sendTipsBtn.style.color = "#3e2723";
             }, 2000);
-        });
-
-        // Логика тревоги (старая)
-        onValue(statusRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data && data.is_calling) {
-                if (soundEnabled) {
-                    document.getElementById('body').classList.add('alert-mode');
-                    stopBtn.style.display = 'block';
-                    sirenAudio.play().catch(e => {});
-                    if (navigator.vibrate) navigator.vibrate([1000, 500, 1000]);
-                }
-            } else {
-                document.getElementById('body').classList.remove('alert-mode');
-                stopBtn.style.display = 'none';
-                sirenAudio.pause(); sirenAudio.currentTime = 0;
-            }
-        });
-
-        stopBtn.addEventListener('click', () => {
-            set(statusRef, { is_calling: false });
         });
 
     </script>
