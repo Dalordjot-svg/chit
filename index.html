@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MOON CAFE - Экран Клиента</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&display=swap');
+
+        body {
+            margin: 0; padding: 0; height: 100vh; 
+            background-color: #0b0e14;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(255, 234, 167, 0.05) 0%, transparent 60%),
+                radial-gradient(circle at 80% 10%, rgba(116, 185, 255, 0.05) 0%, transparent 40%);
+            font-family: 'Montserrat', sans-serif; overflow: hidden; 
+            color: #f1f2f6; user-select: none; position: relative;
+        }
+
+        /* --- ЛОГОТИП --- */
+        .top-logo {
+            position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
+            font-size: 1.5rem; font-weight: 900; letter-spacing: 10px;
+            color: #ffeaa7; text-transform: uppercase;
+            display: flex; align-items: center; gap: 10px;
+            text-shadow: 0 0 20px rgba(255, 234, 167, 0.5); z-index: 50;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .top-logo span { font-size: 2.2rem; }
+        .top-logo.hidden { opacity: 0; transform: translate(-50%, -20px); pointer-events: none; }
+
+        /* --- БАЗОВЫЙ КЛАСС --- */
+        .ui-layer {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 100%; height: 100%;
+        }
+        .hidden-scale { transform: translate(-50%, -50%) scale(0.9) !important; opacity: 0 !important; pointer-events: none; }
+
+        /* --- 1. КНОПКА ВЫЗОВА --- */
+        #callBtn {
+            width: 300px; height: 300px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 30px rgba(255, 234, 167, 0.05);
+            cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: #fff; transition: all 0.3s;
+        }
+        #callBtn:not(.calling-state) { animation: idleHover 4s ease-in-out infinite alternate; }
+        @keyframes idleHover { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
+        
+        #callBtn h1 { font-size: 2.5rem; margin: 0; font-weight: 900; letter-spacing: 2px; }
+        #callBtn p { font-size: 1.2rem; margin-top: 5px; font-weight: 500; color: #a4b0be; text-transform: uppercase; letter-spacing: 1px; }
+        .icon { font-size: 4rem; margin-bottom: 15px; filter: drop-shadow(0 5px 10px rgba(255, 234, 167, 0.3)); }
+        
+        #callBtn.calling-state { background: rgba(255, 234, 167, 0.1); border-color: #ffeaa7; box-shadow: 0 0 50px rgba(255, 234, 167, 0.3), inset 0 0 20px rgba(255, 234, 167, 0.2); }
+        #callBtn.calling-state h1 { color: #ffeaa7; }
+        .status-msg { margin-top: 50px; font-size: 1.2rem; font-weight: 500; color: #a4b0be; letter-spacing: 1px; }
+
+        /* --- 2. ПРИВЕТСТВИЕ --- */
+        .greeting-card { text-align: center; }
+        .greeting-card h1 { font-size: 4rem; margin: 0; color: #ffffff; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; }
+        .greeting-card p { font-size: 1.8rem; color: #ffeaa7; margin-top: 15px; font-weight: 500; line-height: 1.4; max-width: 800px; }
+
+        /* --- 3. ПОЛНОЭКРАННАЯ ОПЛАТА С ЧЕКОМ (10 СЕК) --- */
+        .fullscreen-bg-slider { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #0b0e14; }
+        
+        /* Исправленная анимация фото */
+        .fullscreen-bg-slider img {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
+            opacity: 0; animation: fadeCycle 15s infinite;
+        }
+        .fullscreen-bg-slider img:nth-child(1) { animation-delay: 0s; }
+        .fullscreen-bg-slider img:nth-child(2) { animation-delay: 5s; }
+        .fullscreen-bg-slider img:nth-child(3) { animation-delay: 10s; }
+        
+        @keyframes fadeCycle {
+            0%, 25% { opacity: 1; transform: scale(1); }
+            33%, 90% { opacity: 0; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 100%); z-index: 2; }
+
+        /* Чек */
+        .receipt-paper {
+            position: absolute; top: 0; left: 0; height: 100vh; width: 450px; background: #fdfbf7; color: #2d3436; z-index: 3;
+            padding: 60px 40px; box-sizing: border-box; box-shadow: 30px 0 60px rgba(0,0,0,0.6);
+            border-right: 6px dashed #dfe6e9; display: flex; flex-direction: column; justify-content: center;
+        }
+        
+        .vibrate-anim { animation: vibrate 0.1s linear infinite; }
+        @keyframes vibrate {
+            0% { transform: translate(2px, 2px); } 20% { transform: translate(-2px, -2px); }
+            40% { transform: translate(2px, -2px); } 60% { transform: translate(-2px, 2px); }
+            80% { transform: translate(2px, 2px); } 100% { transform: translate(0, 0); }
+        }
+
+        .receipt-header { font-size: 1.8rem; font-weight: 900; text-align: center; letter-spacing: 4px; margin-bottom: 30px; color: #000; }
+        .receipt-divider { border-bottom: 2px dashed #b2bec3; margin: 30px 0; }
+        .receipt-label { font-size: 1.3rem; font-weight: 600; color: #636e72; text-align: center; }
+        .receipt-total { font-size: 5rem; font-weight: 900; color: #000; text-align: center; margin: 15px 0; }
+        .receipt-instruction { font-size: 1.2rem; line-height: 1.6; text-align: center; font-weight: 600; color: #2d3436; margin-bottom: 20px; }
+        .receipt-footer { background: rgba(0,0,0,0.05); padding: 20px; border-radius: 12px; text-align: center; font-weight: 700; font-size: 1.2rem; margin-top: 40px; }
+
+        /* --- 4. АНИМАЦИЯ ПЕРЕХОДА --- */
+        .moon-wave {
+            position: absolute; top: 50%; left: 50%; width: 10px; height: 10px;
+            background: #0b0e14; border-radius: 50%; transform: translate(-50%, -50%) scale(0); 
+            z-index: 25; pointer-events: none; transition: transform 0.6s cubic-bezier(0.85, 0, 0.15, 1);
+            box-shadow: 0 0 100px 20px #ffeaa7;
+        }
+        .moon-wave.active { transform: translate(-50%, -50%) scale(350); }
+
+        /* --- 5. ЭКРАН ЧАЕВЫХ --- */
+        .modular-ui {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -40%); z-index: 30;
+            display: flex; gap: 40px; align-items: stretch; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s;
+            width: 90%; max-width: 1100px;
+        }
+        .modular-ui.visible { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
+
+        .module-left { background: #ffffff; padding: 40px; border-radius: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; width: 350px; }
+        .qr-image { width: 280px; height: 280px; border-radius: 10px; display: block; margin-bottom: 25px; }
+
+        .module-right { flex: 1; background: rgba(255, 255, 255, 0.02); padding: 50px; border-radius: 30px; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: space-between; }
+        .bill-info { font-size: 1.2rem; color: #a4b0be; margin-bottom: 20px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
+        .module-right h2 { margin: 0 0 10px; color: #ffeaa7; font-size: 1.5rem; font-weight: 700; }
+        .tip-display { font-size: 4.5rem; font-weight: 900; color: white; margin-bottom: 30px; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        
+        .tips-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .tip-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 20px 0; border-radius: 20px; font-size: 1.8rem; font-weight: 800; cursor: pointer; transition: all 0.2s; }
+        .tip-btn:active { transform: scale(0.95); }
+        .tip-btn.selected { background: #ffeaa7; color: #0b0e14; border-color: #ffeaa7; box-shadow: 0 0 20px rgba(255, 234, 167, 0.4); }
+        
+        .instructions { font-size: 1.1rem; color: #a4b0be; line-height: 1.6; margin-bottom: 30px; font-weight: 500; }
+        .btn-cancel { background: transparent; color: #ffeaa7; border: 2px solid rgba(255, 234, 167, 0.3); padding: 20px 30px; border-radius: 20px; font-size: 1.3rem; font-weight: 700; cursor: pointer; width: 100%; transition: all 0.3s; margin-top: auto; }
+        .btn-cancel:active { background: rgba(255, 234, 167, 0.1); }
+
+    </style>
+</head>
+<body>
+
+    <div class="top-logo" id="topLogo"><span>🌙</span> MOON CAFE</div>
+
+    <div class="ui-layer hidden-scale" id="callContainer">
+        <button id="callBtn">
+            <div class="icon" id="btnIcon">🛎️</div>
+            <h1 id="btnTitle">ВЫЗВАТЬ</h1>
+            <p id="btnSub">официанта</p>
+        </button>
+        <div class="status-msg" id="statusMsg">Нажмите, чтобы позвать сотрудника</div>
+    </div>
+
+    <div class="ui-layer hidden-scale" id="greetingContainer">
+        <div class="greeting-card">
+            <h1 id="greetingTitle">Добро пожаловать</h1>
+            <p id="greetingSub">Мы рады вас видеть</p>
+        </div>
+    </div>
+
+    <div class="ui-layer hidden-scale" id="paymentMethodContainer">
+        <div class="fullscreen-bg-slider">
+            <img src="https://akspic.ru/image/170531-vesennij_sezon-sezon-vesna-vremya-leto/1920x1080" alt="Spring 1">
+            <img src="https://www.google.com/imgres?q=%D1%84%D0%BE%D1%82%D0%BE%20%D0%B4%D0%BB%D1%8F%20%D1%84%D0%BE%D0%BD%D0%B0&imgurl=https%3A%2F%2Fpng.pngtree.com%2Fthumb_back%2Ffh260%2Fbackground%2F20211219%2Fpngtree-cute-pastel-background-aesthetic-image_928060.jpg&imgrefurl=https%3A%2F%2Fru.pngtree.com%2Ffree-cute-background&docid=ejbWR5w6DHI9OM&tbnid=NxlZGivFnkrajM&vet=12ahUKEwjv0YjH25CTAxXEm2oFHdWLPcU4ChCc8A56BAh1EAE..i&w=463&h=260&hcb=2&ved=2ahUKEwjv0YjH25CTAxXEm2oFHdWLPcU4ChCc8A56BAh1EAE" alt="Spring 2">
+            <img src="https://www.google.com/imgres?q=%D1%84%D0%BE%D1%82%D0%BE%20%D0%B4%D0%BB%D1%8F%20%D1%84%D0%BE%D0%BD%D0%B0&imgurl=https%3A%2F%2Fimg.freepik.com%2Fpremium-vector%2Fabstract-fluid-background-with-colorful-gradient_747896-5193.jpg%3Fsemt%3Dais_hybrid%26w%3D740%26q%3D80&imgrefurl=https%3A%2F%2Fru.freepik.com%2Ffree-photos-vectors%2F%25D1%2584%25D0%25BE%25D0%25BD-%25D0%25B4%25D0%25BB%25D1%258F-%25D1%2581%25D0%25B0%25D0%25B9%25D1%2582%25D0%25B0&docid=3ABfENqGcwwrmM&tbnid=CiOuS-ZMw1KAdM&vet=12ahUKEwj5zuXY25CTAxWymWoFHc-OLjM4FBCc8A56BAhjEAE..i&w=740&h=444&hcb=2&ved=2ahUKEwj5zuXY25CTAxWymWoFHc-OLjM4FBCc8A56BAhjEAE" alt="Spring 3">
+            <div class="bg-overlay"></div>
+        </div>
+
+        <div class="receipt-paper" id="receiptPaper">
+            <div>
+                <div class="receipt-header">MOON CAFE</div>
+                <div class="receipt-divider"></div>
+                <div class="receipt-label">К ОПЛАТЕ:</div>
+                <div class="receipt-total" id="paymentTotal">0 ₽</div>
+                <div class="receipt-divider"></div>
+                <div class="receipt-instruction">
+                    Оплатите заказ удобным для вас способом:<br>картой, наличными или по QR-коду
+                </div>
+            </div>
+            <div class="receipt-footer">
+                🧾 Чек вам выдадут на кассе
+            </div>
+        </div>
+    </div>
+
+    <div class="moon-wave" id="moonWave"></div>
+    
+    <div class="modular-ui" id="modularUi">
+        <div class="module-left">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https%3A%2F%2Fwww.sberbank.com%2Fsms%2Fpbpn%3FrequisiteNumber%3D79585161679" class="qr-image" alt="QR Сбербанк">
+            <p style="color: #2f3640; margin: 0; font-weight: 800; font-size: 1.2rem; text-align: center; text-transform: uppercase;">Отсканируйте камерой<br>или в Сбер Онлайн</p>
+        </div>
+        <div class="module-right">
+            <div>
+                <div class="bill-info">Сумма заказа: <strong id="baseBillDisplay" style="color: #fff;">0</strong> ₽</div>
+                <h2>Сумма чаевых к переводу:</h2>
+                <div class="tip-display"><span id="tipTotal">0</span> ₽</div>
+                <div class="tips-grid">
+                    <button class="tip-btn" data-percent="5">5%</button>
+                    <button class="tip-btn" data-percent="10">10%</button>
+                    <button class="tip-btn" data-percent="15">15%</button>
+                </div>
+                <div class="instructions">
+                    1. Выберите процент чаевых.<br>
+                    2. Отсканируйте QR-код.<br>
+                    3. Введите указанную сумму в приложении.
+                </div>
+            </div>
+            <button class="btn-cancel" id="finishBtn">ЗАВЕРШИТЬ</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBa3MKrLHcRPauIyzxgxfNpLUphmehJAkg",
+          authDomain: "moon-logistik.firebaseapp.com",
+          databaseURL: "https://moon-logistik-default-rtdb.firebaseio.com",
+          projectId: "moon-logistik"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        
+        const statusRef = ref(db, 'cashier_call/status');
+        const tipRequestRef = ref(db, 'tips_request');
+        const modeRef = ref(db, 'screen_mode'); 
+        const infoRef = ref(db, 'info_display'); 
+
+        const topLogo = document.getElementById('topLogo');
+        const callContainer = document.getElementById('callContainer');
+        const greetingContainer = document.getElementById('greetingContainer');
+        const paymentMethodContainer = document.getElementById('paymentMethodContainer');
+        const receiptPaper = document.getElementById('receiptPaper');
+        const paymentTotal = document.getElementById('paymentTotal');
+        
+        const moonWave = document.getElementById('moonWave');
+        const modularUi = document.getElementById('modularUi');
+        
+        let currentMode = 'call'; 
+        let isPaymentActive = false;
+
+        // --- БАЗА ФРАЗ ---
+        const funGreetings = [
+            { title: "Добро пожаловать", sub: "Мы рады вас видеть" },
+            { title: "Добро пожаловать", sub: "Готовы принять ваш заказ" },
+            { title: "Ого!", sub: "А вы сегодня так красивы!" },
+            { title: "Ослепительно", sub: "Солнце так ярко не светило, как вы светите сейчас" },
+            { title: "Привет!", sub: "Какой кофе выберете сегодня?" },
+            { title: "Вау...", sub: "С такой улыбкой кофе будет еще слаще" }
+        ];
+        // Слегка страшные / загадочные фразы (редкие)
+        const creepyGreetings = [
+            { title: "Хмм...", sub: "Мы вас уже видели?" },
+            { title: "Осторожно", sub: "Наш кофе вызывает сильную зависимость" }
+        ];
+
+        function updateScreenVisibility() {
+            callContainer.classList.add('hidden-scale');
+            greetingContainer.classList.add('hidden-scale');
+
+            if (isPaymentActive) {
+                topLogo.classList.add('hidden'); // Прячем логотип
+                return;
+            } else {
+                topLogo.classList.remove('hidden'); // Показываем логотип
+            }
+
+            if (currentMode === 'call') {
+                callContainer.classList.remove('hidden-scale');
+            } else if (currentMode === 'register') {
+                // Рандомный выбор фразы
+                const isCreepy = Math.random() < 0.15; // 15% шанс на пугалку
+                const phraseArray = isCreepy ? creepyGreetings : funGreetings;
+                const greeting = phraseArray[Math.floor(Math.random() * phraseArray.length)];
+                
+                document.getElementById('greetingTitle').textContent = greeting.title;
+                document.getElementById('greetingSub').textContent = greeting.sub;
+                
+                greetingContainer.classList.remove('hidden-scale');
+            }
+        }
+
+        onValue(infoRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.active && data.url) { window.location.href = data.url; }
+        });
+
+        onValue(modeRef, (snapshot) => {
+            const mode = snapshot.val();
+            if (mode) { currentMode = mode; updateScreenVisibility(); }
+        });
+
+        let isCalling = false;
+        const btn = document.getElementById('callBtn');
+        
+        onValue(statusRef, (snapshot) => {
+            const data = snapshot.val();
+            isCalling = data ? data.is_calling : false;
+            if(isCalling) {
+                btn.classList.add('calling-state');
+                document.getElementById('btnTitle').textContent = "ОЖИДАЙТЕ";
+                document.getElementById('statusMsg').textContent = "Сотрудник уже спешит к вам!";
+            } else {
+                btn.classList.remove('calling-state');
+                document.getElementById('btnTitle').textContent = "ВЫЗВАТЬ";
+                document.getElementById('statusMsg').textContent = "Нажмите, чтобы позвать сотрудника";
+            }
+        });
+
+        btn.addEventListener('pointerdown', () => { set(statusRef, { is_calling: !isCalling, timestamp: Date.now() }); });
+
+        // --- ЛОГИКА ОПЛАТЫ И АНИМАЦИИ ---
+        onValue(tipRequestRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.active) {
+                isPaymentActive = true; updateScreenVisibility(); runPaymentAnimation(data.amount);
+            } else {
+                isPaymentActive = false; resetToCallScreen(); updateScreenVisibility(); 
+            }
+        });
+
+        const baseBillDisplay = document.getElementById('baseBillDisplay');
+        const tipTotalEl = document.getElementById('tipTotal');
+        const tipBtns = document.querySelectorAll('.tip-btn');
+        const dingSound = new Audio("data:audio/mp3;base64,//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
+        
+        let currentBaseBill = 0;
+        let paymentPhaseTimeout;
+        let finalTipTimeout;
+
+        function runPaymentAnimation(amount) {
+            currentBaseBill = parseFloat(amount);
+            baseBillDisplay.textContent = currentBaseBill.toFixed(0);
+            tipTotalEl.textContent = "0"; 
+            tipBtns.forEach(b => b.classList.remove('selected'));
+            paymentTotal.textContent = currentBaseBill.toFixed(0) + " ₽";
+            
+            dingSound.play().catch(e => {});
+
+            paymentMethodContainer.classList.remove('hidden-scale');
+            receiptPaper.classList.remove('vibrate-anim'); 
+
+            // 10 СЕКУНД ТАЙМЕР
+            clearTimeout(paymentPhaseTimeout);
+            paymentPhaseTimeout = setTimeout(() => {
+                receiptPaper.classList.add('vibrate-anim');
+                
+                setTimeout(() => {
+                    paymentMethodContainer.classList.add('hidden-scale');
+                    moonWave.classList.add('active'); 
+                    
+                    setTimeout(() => { 
+                        modularUi.classList.add('visible'); 
+                        moonWave.classList.remove('active');
+                    }, 500);
+                    startFinalTimer();
+                }, 500);
+            }, 9500); 
+        }
+
+        tipBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                tipBtns.forEach(b => b.classList.remove('selected'));
+                e.target.classList.add('selected');
+                const percent = parseInt(e.target.dataset.percent);
+                const tipAmount = currentBaseBill * (percent / 100);
+                tipTotalEl.textContent = Math.round(tipAmount);
+                startFinalTimer(); 
+            });
+        });
+
+        document.getElementById('finishBtn').addEventListener('click', () => { set(tipRequestRef, { active: false }); });
+
+        function resetToCallScreen() {
+            clearTimeout(paymentPhaseTimeout); clearTimeout(finalTipTimeout);
+            paymentMethodContainer.classList.add('hidden-scale');
+            receiptPaper.classList.remove('vibrate-anim');
+            modularUi.classList.remove('visible');
+            moonWave.classList.remove('active');
+        }
+
+        function startFinalTimer() {
+            clearTimeout(finalTipTimeout);
+            finalTipTimeout = setTimeout(() => { set(tipRequestRef, { active: false }); }, 60000); 
+        }
+
+    </script>
+</body>
+</html>

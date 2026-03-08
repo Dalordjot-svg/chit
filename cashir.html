@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MOON CAFE - POS Сотрудника</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap');
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0; padding: 0; background-color: #0b0e14; color: #f1f2f6;
+            font-family: 'Montserrat', sans-serif; overflow-x: hidden; user-select: none; touch-action: manipulation; 
+        }
+
+        .top-bar { 
+            position: fixed; top: 0; width: 100%; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(11, 14, 20, 0.85); font-size: 14px; color: #a4b0be; z-index: 100; backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .moon-logo-mini { font-weight: 900; color: #ffeaa7; letter-spacing: 2px; }
+        .screen-status { color: #ffeaa7; font-weight: bold; display: none; }
+
+        .activation-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: #0b0e14; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 200; text-align: center;
+        }
+        .btn-activate {
+            background: rgba(255, 234, 167, 0.1); color: #ffeaa7; border: 2px solid #ffeaa7; padding: 20px 40px; border-radius: 20px; 
+            font-size: 18px; font-weight: 800; cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-activate:active { transform: scale(0.95); background: #ffeaa7; color: #0b0e14; }
+
+        .workspace { display: none; padding: 70px 20px 100px; min-height: 100vh; }
+        .tab-content { display: none; flex-direction: column; gap: 20px; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: rgba(255, 255, 255, 0.02); padding: 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; }
+        .card h3 { margin: 0 0 15px; color: #ffeaa7; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* ВЫЗОВЫ */
+        .call-card { align-items: center; text-align: center; transition: all 0.3s; padding: 40px 20px; }
+        .icon-circle { width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; justify-content: center; align-items: center; font-size: 50px; margin-bottom: 20px; transition: all 0.3s; border: 1px solid rgba(255,255,255,0.1); }
+        .call-card h1 { margin: 0 0 10px; font-size: 24px; font-weight: 900; }
+        .call-card p { color: #a4b0be; margin-bottom: 25px; font-size: 15px; }
+        .btn-stop { width: 100%; padding: 20px; border: none; border-radius: 16px; font-size: 18px; font-weight: 900; background: linear-gradient(135deg, #ff4757, #c0392b); color: white; cursor: pointer; display: none; text-transform: uppercase; letter-spacing: 1px; animation: pulse-btn 1s infinite alternate; box-shadow: 0 0 30px rgba(255, 71, 87, 0.4); }
+        @keyframes pulse-btn { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+
+        .alert-mode { background-color: #2d1313; }
+        .alert-mode .call-card { border-color: #ff4757; box-shadow: 0 0 40px rgba(255, 71, 87, 0.2); }
+        .alert-mode .icon-circle { background: #ff4757; animation: shake 0.4s infinite; border-color: transparent; }
+        @keyframes shake { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(10deg); } 75% { transform: rotate(-10deg); } }
+
+        /* ЭКРАН */
+        .mode-buttons, .info-buttons { display: flex; flex-direction: column; gap: 12px; }
+        .btn-mode { padding: 18px; border: 2px solid rgba(255,255,255,0.1); border-radius: 16px; background: rgba(255,255,255,0.03); color: white; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 10px; text-transform: uppercase; }
+        .btn-mode:active { transform: scale(0.95); }
+        .btn-mode.active { border-color: #2ed573; background: rgba(46, 213, 115, 0.1); color: #2ed573; }
+        .btn-info { padding: 18px; border: 1px solid rgba(255, 234, 167, 0.2); border-radius: 16px; background: rgba(255, 234, 167, 0.05); color: #ffeaa7; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-align: left; }
+        .btn-info:active { transform: scale(0.95); background: rgba(255, 234, 167, 0.15); }
+        .btn-info.close-info { background: rgba(255, 71, 87, 0.1); color: #ff4757; border-color: rgba(255, 71, 87, 0.3); text-align: center; margin-top: 10px; }
+
+        /* КАССА И СБРОС */
+        .calc-display { width: 100%; background: #000; border: 2px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; font-size: 36px; font-weight: 900; color: #ffeaa7; text-align: right; margin-bottom: 20px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; box-shadow: inset 0 4px 10px rgba(0,0,0,0.8); }
+        .calc-display.error { color: #ff4757; }
+        .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; margin-bottom: 15px; }
+        .key { background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; padding: 20px 0; font-size: 24px; font-weight: 800; cursor: pointer; transition: background 0.1s, transform 0.1s; }
+        .key:active { background: rgba(255,255,255,0.15); transform: scale(0.92); }
+        .key.action { background: rgba(255, 234, 167, 0.1); color: #ffeaa7; border-color: rgba(255, 234, 167, 0.2); }
+        .key.clear { background: rgba(255, 71, 87, 0.1); color: #ff4757; border-color: rgba(255, 71, 87, 0.2); }
+        .key.equal { background: rgba(46, 213, 115, 0.15); color: #2ed573; grid-row: span 2; height: 100%; border-color: rgba(46, 213, 115, 0.3); }
+        
+        .btn-send { width: 100%; padding: 20px; border: none; border-radius: 16px; font-size: 16px; font-weight: 900; background: #ffeaa7; color: #0b0e14; cursor: pointer; text-transform: uppercase; transition: transform 0.2s; letter-spacing: 1px; }
+        .btn-send:active { transform: scale(0.95); }
+
+        /* КНОПКА СБРОСА ЧАЕВЫХ */
+        .btn-reset-tips {
+            width: 100%; padding: 20px; border: 2px dashed #ff4757; border-radius: 16px; font-size: 14px;
+            font-weight: 800; background: rgba(255, 71, 87, 0.05); color: #ff4757; cursor: pointer;
+            text-transform: uppercase; margin-top: 15px; transition: all 0.2s;
+        }
+        .btn-reset-tips:active { background: rgba(255, 71, 87, 0.2); transform: scale(0.95); }
+
+        /* ОСТРОВОК */
+        .nav-island { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 400px; background: rgba(11, 14, 20, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 30px; display: flex; justify-content: space-around; align-items: center; padding: 8px 15px; z-index: 1000; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+        .nav-btn { background: transparent; border: none; color: #a4b0be; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; font-family: 'Montserrat', sans-serif; text-transform: uppercase; cursor: pointer; padding: 10px; border-radius: 20px; transition: all 0.3s ease; width: 30%; }
+        .nav-btn .icon { font-size: 22px; transition: transform 0.3s; margin-bottom: 2px; }
+        .nav-btn.active { color: #ffeaa7; background: rgba(255, 234, 167, 0.1); }
+        .nav-btn.active .icon { transform: translateY(-3px) scale(1.1); }
+        .nav-btn.alert-badge { position: relative; color: #ff4757; animation: navPulse 1s infinite alternate; }
+        @keyframes navPulse { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+
+    </style>
+</head>
+<body id="body">
+
+    <div class="top-bar">
+        <span class="moon-logo-mini">🌙 MOON</span>
+        <span class="screen-status" id="screenStatus">☀️ ON</span>
+        <span id="connStatus">🔴 Отключено</span>
+    </div>
+
+    <div class="activation-screen" id="activationScreen">
+        <div style="font-size: 60px; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(255,234,167,0.3));">🌙</div>
+        <h2 style="margin-bottom: 40px; font-size: 20px; color: #ffeaa7; text-transform: uppercase;">Система MOON CAFE</h2>
+        <button id="activateBtn" class="btn-activate">Включить пульт</button>
+    </div>
+
+    <div class="workspace" id="workspace">
+        
+        <div class="tab-content active" id="tab-calls">
+            <div class="card call-card" id="callModule">
+                <div class="icon-circle" id="iconBox"><span id="icon">🛎️</span></div>
+                <h1 id="title">Ожидание</h1>
+                <p id="subtitle">Пульт готов к приему вызовов со столов.</p>
+                <button id="stopBtn" class="btn-stop">ПРИНЯТЬ ВЫЗОВ</button>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-screen">
+            <div class="card">
+                <h3>Управление кассой</h3>
+                <div class="mode-buttons">
+                    <button id="btnModeCall" class="btn-mode active">🛎️ Экран Вызова</button>
+                    <button id="btnModeReg" class="btn-mode">🛒 Экран "Касса Активна"</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Отправить меню на планшет</h3>
+                <div class="info-buttons">
+                    <button class="btn-info article-btn" data-url="coffee.html">☕ Кофейная карта</button>
+                    <button class="btn-info article-btn" data-url="bubble.html">🧋 Меню Бабл Ти</button>
+                    <button class="btn-info article-btn" data-url="promo.html">🎁 Акции</button>
+                    <button id="btnCloseInfo" class="btn-info close-info">❌ Вернуть на главную</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-tips">
+            <div class="card">
+                <h3>Сумма заказа:</h3>
+                <div class="calc-display" id="calcDisplay">0</div>
+                <div class="keypad">
+                    <button class="key" data-val="7">7</button>
+                    <button class="key" data-val="8">8</button>
+                    <button class="key" data-val="9">9</button>
+                    <button class="key clear" data-val="C">C</button>
+                    
+                    <button class="key" data-val="4">4</button>
+                    <button class="key" data-val="5">5</button>
+                    <button class="key" data-val="6">6</button>
+                    <button class="key action" data-val="DEL">⌫</button>
+                    
+                    <button class="key" data-val="1">1</button>
+                    <button class="key" data-val="2">2</button>
+                    <button class="key" data-val="3">3</button>
+                    <button class="key action" data-val="+">+</button>
+                    
+                    <button class="key" data-val="0">0</button>
+                    <button class="key" data-val="00">00</button>
+                    <button class="key action" data-val="-">-</button>
+                    <button class="key equal" data-val="=" style="grid-column: 4; grid-row: 3 / 5;">=</button>
+                </div>
+                <button id="sendTipsBtn" class="btn-send">Отправить на экран ➔</button>
+                <button id="resetTipsBtn" class="btn-reset-tips">❌ Сбросить экран (Новый заказ)</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="nav-island" id="navIsland" style="display: none;">
+        <button class="nav-btn active" data-target="tab-calls" id="navCallBtn">
+            <span class="icon">🛎️</span>
+            <span>Вызовы</span>
+        </button>
+        <button class="nav-btn" data-target="tab-screen">
+            <span class="icon">📱</span>
+            <span>Экран</span>
+        </button>
+        <button class="nav-btn" data-target="tab-tips">
+            <span class="icon">💳</span>
+            <span>Касса</span>
+        </button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBa3MKrLHcRPauIyzxgxfNpLUphmehJAkg",
+          authDomain: "moon-logistik.firebaseapp.com",
+          databaseURL: "https://moon-logistik-default-rtdb.firebaseio.com",
+          projectId: "moon-logistik"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        
+        const statusRef = ref(db, 'cashier_call/status');
+        const tipRequestRef = ref(db, 'tips_request');
+        const modeRef = ref(db, 'screen_mode');
+        const infoRef = ref(db, 'info_display');
+
+        const body = document.getElementById('body');
+        const activationScreen = document.getElementById('activationScreen');
+        const workspace = document.getElementById('workspace');
+        const activateBtn = document.getElementById('activateBtn');
+        const navIsland = document.getElementById('navIsland');
+        
+        const stopBtn = document.getElementById('stopBtn');
+        const icon = document.getElementById('icon');
+        const title = document.getElementById('title');
+        const subtitle = document.getElementById('subtitle');
+        const connStatus = document.getElementById('connStatus');
+        const screenStatus = document.getElementById('screenStatus');
+        const navCallBtn = document.getElementById('navCallBtn');
+        
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const tabs = document.querySelectorAll('.tab-content');
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                navBtns.forEach(b => b.classList.remove('active'));
+                tabs.forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.target).classList.add('active');
+                window.scrollTo(0, 0); 
+            });
+        });
+
+        const btnModeCall = document.getElementById('btnModeCall');
+        const btnModeReg = document.getElementById('btnModeReg');
+        const articleBtns = document.querySelectorAll('.article-btn');
+        const btnCloseInfo = document.getElementById('btnCloseInfo');
+
+        const calcDisplay = document.getElementById('calcDisplay');
+        const sendTipsBtn = document.getElementById('sendTipsBtn');
+        const resetTipsBtn = document.getElementById('resetTipsBtn');
+        const keys = document.querySelectorAll('.key');
+
+        const sirenAudio = new Audio("./siren.mp3");
+        sirenAudio.loop = true;
+        sirenAudio.preload = "auto";
+        let soundEnabled = false; let wakeLock = null;
+
+        async function keepScreenAwake() {
+            if (!soundEnabled) return; 
+            try {
+                if ('wakeLock' in navigator && wakeLock === null) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    screenStatus.style.display = 'inline';
+                    wakeLock.addEventListener('release', () => { wakeLock = null; screenStatus.style.display = 'none'; });
+                }
+            } catch (err) {}
+        }
+        document.addEventListener('pointerdown', keepScreenAwake);
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') keepScreenAwake(); });
+
+        activateBtn.addEventListener('click', async () => {
+            await sirenAudio.play(); sirenAudio.pause(); sirenAudio.currentTime = 0;
+            soundEnabled = true; activationScreen.style.display = 'none'; workspace.style.display = 'block'; navIsland.style.display = 'flex'; keepScreenAwake();
+        });
+
+        onValue(modeRef, (snapshot) => {
+            const mode = snapshot.val() || 'call'; 
+            if (mode === 'call') { btnModeCall.classList.add('active'); btnModeReg.classList.remove('active'); } 
+            else { btnModeCall.classList.remove('active'); btnModeReg.classList.add('active'); }
+        });
+
+        btnModeCall.addEventListener('click', () => set(modeRef, 'call'));
+        btnModeReg.addEventListener('click', () => set(modeRef, 'register'));
+
+        articleBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const url = e.currentTarget.dataset.url;
+                set(infoRef, { active: true, url: url });
+                const originalText = e.currentTarget.textContent;
+                e.currentTarget.textContent = "✔️ ОТКРЫТО"; e.currentTarget.style.background = "rgba(46, 213, 115, 0.2)"; e.currentTarget.style.color = "#2ed573"; e.currentTarget.style.borderColor = "#2ed573";
+                setTimeout(() => { e.currentTarget.textContent = originalText; e.currentTarget.style.background = ""; e.currentTarget.style.color = ""; e.currentTarget.style.borderColor = ""; }, 1500);
+            });
+        });
+
+        btnCloseInfo.addEventListener('click', () => { set(infoRef, { active: false, url: '' }); });
+
+        onValue(statusRef, (snapshot) => {
+            const data = snapshot.val();
+            const isCalling = data ? data.is_calling : false;
+            connStatus.textContent = "🟢 Подключено"; connStatus.style.color = "#2ed573";
+
+            if (isCalling) {
+                if (soundEnabled) {
+                    body.classList.add('alert-mode'); navCallBtn.classList.add('alert-badge');
+                    icon.textContent = "🚨"; title.textContent = "ВЫЗОВ!"; subtitle.textContent = "Подойдите к столику клиента."; stopBtn.style.display = 'block';
+                    sirenAudio.play().catch(e => {}); if (navigator.vibrate) navigator.vibrate([1000, 500, 1000]);
+                }
+            } else {
+                body.classList.remove('alert-mode'); navCallBtn.classList.remove('alert-badge');
+                icon.textContent = "🛎️"; title.textContent = "Ожидание"; subtitle.textContent = "Пульт готов к приему вызовов со столов."; stopBtn.style.display = 'none';
+                sirenAudio.pause(); sirenAudio.currentTime = 0;
+            }
+        });
+
+        stopBtn.addEventListener('click', () => { set(statusRef, { is_calling: false, timestamp: Date.now() }); });
+
+        let calcInput = ""; let isEvaluated = false;
+        function updateDisplay() { calcDisplay.classList.remove('error'); calcDisplay.textContent = calcInput === "" ? "0" : calcInput; }
+
+        keys.forEach(key => {
+            key.addEventListener('click', (e) => {
+                const val = e.target.dataset.val;
+                if (isEvaluated && !['+', '-', '=', 'C', 'DEL'].includes(val)) { calcInput = ""; }
+                isEvaluated = false;
+
+                if (val === 'C') { calcInput = ""; } 
+                else if (val === 'DEL') { calcInput = calcInput.slice(0, -1); } 
+                else if (val === '=') {
+                    try {
+                        let sanitized = calcInput.replace(/[^-()\d/*+.]/g, '');
+                        if (sanitized !== "") { let result = eval(sanitized); calcInput = Number.isInteger(result) ? String(result) : String(result.toFixed(2)); isEvaluated = true; }
+                    } catch (err) { calcInput = "Ошибка"; calcDisplay.classList.add('error'); setTimeout(() => { calcInput = ""; updateDisplay(); }, 1000); return; }
+                } else {
+                    if (calcInput === "" && val === "00") return;
+                    if (calcInput === "0" && !['+', '-'].includes(val)) calcInput = ""; 
+                    calcInput += val;
+                }
+                updateDisplay();
+            });
+        });
+
+        sendTipsBtn.addEventListener('click', () => {
+            try {
+                let sanitized = calcInput.replace(/[^-()\d/*+.]/g, '');
+                if (sanitized !== "") { calcInput = String(eval(sanitized)); updateDisplay(); }
+            } catch (e) { alert("Неверный формат суммы!"); return; }
+
+            const amount = parseFloat(calcInput);
+            if (!amount || amount <= 0) { calcDisplay.classList.add('error'); setTimeout(() => calcDisplay.classList.remove('error'), 500); return; }
+
+            set(tipRequestRef, { active: true, amount: amount, timestamp: Date.now() });
+
+            const originalText = sendTipsBtn.textContent;
+            sendTipsBtn.textContent = "✔️ ОТПРАВЛЕНО"; sendTipsBtn.style.background = "#2ed573"; sendTipsBtn.style.color = "#0b0e14";
+            calcInput = ""; updateDisplay();
+
+            setTimeout(() => { sendTipsBtn.textContent = originalText; sendTipsBtn.style.background = "#ffeaa7"; sendTipsBtn.style.color = "#0b0e14"; }, 2000);
+        });
+
+        // ЛОГИКА СБРОСА ОПЛАТЫ
+        resetTipsBtn.addEventListener('click', () => {
+            set(tipRequestRef, { active: false }); // Выключаем режим оплаты в БД
+            
+            const originalText = resetTipsBtn.textContent;
+            resetTipsBtn.textContent = "✔️ ЭКРАН СБРОШЕН";
+            resetTipsBtn.style.color = "#2ed573";
+            resetTipsBtn.style.borderColor = "#2ed573";
+            
+            setTimeout(() => { 
+                resetTipsBtn.textContent = originalText; 
+                resetTipsBtn.style.color = ""; 
+                resetTipsBtn.style.borderColor = ""; 
+            }, 1500);
+        });
+
+    </script>
+</body>
+</html>

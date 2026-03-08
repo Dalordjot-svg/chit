@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Бабл Ти MOON</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&display=swap');
+
+        body {
+            margin: 0; padding: 0; 
+            min-height: 100vh; 
+            background-color: #0b0e14;
+            background-image: 
+                radial-gradient(circle at 20% 0%, rgba(253, 121, 168, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 80% 100%, rgba(116, 185, 255, 0.05) 0%, transparent 50%);
+            font-family: 'Montserrat', sans-serif; 
+            color: #f1f2f6; 
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            overflow-x: hidden; user-select: none;
+            padding-top: 40px; padding-bottom: 60px;
+        }
+
+        /* --- ЛОГОТИП И ЗАГОЛОВОК --- */
+        .moon-logo {
+            font-size: 1.2rem; font-weight: 900; letter-spacing: 8px;
+            color: #ffeaa7; text-transform: uppercase; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 10px;
+            text-shadow: 0 0 15px rgba(255, 234, 167, 0.4);
+        }
+        .moon-logo span { font-size: 1.8rem; }
+
+        h1 { 
+            font-size: 3.5rem; color: #ffffff; margin: 0 0 5px 0;
+            font-weight: 900; text-transform: uppercase; letter-spacing: 2px;
+        }
+        
+        .subtitle { 
+            font-size: 1.1rem; color: #a4b0be; margin-bottom: 40px; 
+            text-align: center; font-weight: 500; letter-spacing: 1px;
+            background: rgba(255,255,255,0.05); padding: 10px 25px; border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .subtitle span { color: #ffeaa7; font-weight: 800; }
+
+        /* --- СЕТКА МЕНЮ --- */
+        .menu-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 25px;
+            max-width: 1200px; width: 95%;
+        }
+
+        @media (max-width: 900px) {
+            .menu-grid { grid-template-columns: 1fr; }
+        }
+
+        .menu-card {
+            background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px; padding: 25px 30px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            display: flex; justify-content: space-between; align-items: center; gap: 20px;
+            position: relative; overflow: hidden; transition: transform 0.3s;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+
+        /* Информация о напитке */
+        .drink-info { flex: 1; }
+        .drink-title { font-size: 2rem; font-weight: 900; color: #ffffff; margin: 0 0 10px 0; letter-spacing: 1px; }
+        .drink-desc { font-size: 0.95rem; color: #a4b0be; line-height: 1.5; margin: 0 0 15px 0; max-width: 90%; }
+        
+        .badges { display: flex; gap: 10px; margin-bottom: 0; flex-wrap: wrap; }
+        .badge { 
+            background: rgba(255, 255, 255, 0.05); padding: 6px 14px; border-radius: 12px; 
+            font-size: 0.8rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.1);
+            color: #dfe4ea; text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        /* --- ВИТРИНА СО СТАКАНОМ БАБЛ ТИ --- */
+        .cup-wrapper { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 15px; }
+        
+        .boba-cup {
+            position: relative; width: 75px; height: 110px;
+            border: 3px solid rgba(255,255,255,0.4);
+            border-top: 5px solid rgba(255,255,255,0.8);
+            border-radius: 2px 2px 25px 25px;
+            display: flex; flex-direction: column; justify-content: flex-end;
+            background: rgba(255,255,255,0.05);
+            box-shadow: inset 0 -10px 20px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .boba-cup::before {
+            content: ''; position: absolute;
+            width: 10px; height: 140px;
+            background: linear-gradient(90deg, #ff4757 0%, #ff6b81 50%, #ff4757 100%);
+            top: -20px; left: 50%; transform: translateX(-50%) rotate(10deg);
+            border-radius: 5px; z-index: 5;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .liquid { width: 100%; display: flex; align-items: center; justify-content: center; z-index: 1; }
+        
+        /* ОБНОВЛЕННЫЕ ЦВЕТА ВКУСОВ */
+        .color-blue-oreo { background: linear-gradient(180deg, rgba(108, 92, 231, 0.85) 0%, rgba(45, 52, 54, 0.95) 100%); }
+        .color-choco { background: rgba(89, 54, 44, 0.95); }
+        .color-strawberry { background: rgba(253, 121, 168, 0.85); }
+        .color-mango-buck { background: linear-gradient(180deg, rgba(253, 203, 110, 0.9) 0%, rgba(225, 112, 85, 0.9) 100%); }
+        .color-bubblegum { background: rgba(0, 206, 201, 0.85); }
+
+        .tapioca {
+            height: 25px; width: 100%; background: #2f3542; z-index: 2;
+            background-image: radial-gradient(circle, #1e272e 40%, transparent 45%);
+            background-size: 18px 18px; background-position: center bottom;
+        }
+
+        .price-tag { text-align: center; margin-top: 5px; }
+        .price-tag .vol { font-size: 0.85rem; color: #7f8fa6; margin-bottom: 2px; font-weight: 700; letter-spacing: 1px; }
+        .price-tag .cost { font-size: 1.5rem; font-weight: 900; color: #ffeaa7; text-shadow: 0 0 10px rgba(255, 234, 167, 0.2); }
+
+        .timer-bar {
+            position: fixed; bottom: 0; left: 0; height: 5px; 
+            background: #ffeaa7; width: 100%; animation: shrink 120s linear forwards; 
+            z-index: 100; box-shadow: 0 -2px 15px rgba(255, 234, 167, 0.6);
+        }
+        @keyframes shrink { from { width: 100%; } to { width: 0%; } }
+
+        .btn-back {
+            margin-top: 50px; padding: 18px 50px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05); color: #fff; font-size: 1.1rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;
+            cursor: pointer; transition: all 0.3s; backdrop-filter: blur(10px);
+        }
+        .btn-back:hover { background: rgba(255, 234, 167, 0.1); border-color: #ffeaa7; color: #ffeaa7; }
+        .btn-back:active { transform: scale(0.95); }
+
+    </style>
+</head>
+<body>
+
+    <div class="moon-logo"><span>🌙</span> MOON CAFE</div>
+    <h1>Меню Бабл Ти</h1>
+    <div class="subtitle">Идеальная пропорция: <span>Молоко + Тапиока + Ваш любимый вкус</span></div>
+
+    <div class="menu-grid">
+        
+        <div class="menu-card">
+            <div class="drink-info">
+                <h2 class="drink-title">Черника-Орео</h2>
+                <p class="drink-desc">Ягодная свежесть в дуэте с шоколадным печеньем. (Позывной: Комар).</p>
+                <div class="badges"><div class="badge">Авторский микс</div></div>
+            </div>
+            <div class="cup-wrapper">
+                <div class="boba-cup">
+                    <div class="liquid color-blue-oreo" style="height: 75%;"></div>
+                    <div class="tapioca"></div>
+                </div>
+                <div class="price-tag"><div class="vol">500 мл</div><div class="cost">270 ₽</div></div>
+            </div>
+        </div>
+
+        <div class="menu-card">
+            <div class="drink-info">
+                <h2 class="drink-title">Шоколадный</h2>
+                <p class="drink-desc">Плотный, глубокий вкус специального густого шоколада с нежным молоком.</p>
+                <div class="badges"><div class="badge">Насыщенный</div></div>
+            </div>
+            <div class="cup-wrapper">
+                <div class="boba-cup">
+                    <div class="liquid color-choco" style="height: 75%;"></div>
+                    <div class="tapioca"></div>
+                </div>
+                <div class="price-tag"><div class="vol">500 мл</div><div class="cost">270 ₽</div></div>
+            </div>
+        </div>
+
+        <div class="menu-card">
+            <div class="drink-info">
+                <h2 class="drink-title">Клубничный</h2>
+                <p class="drink-desc">Чистый вкус: только сочная клубника, свежее молоко и ничего лишнего.</p>
+                <div class="badges"><div class="badge">Без сливок</div></div>
+            </div>
+            <div class="cup-wrapper">
+                <div class="boba-cup">
+                    <div class="liquid color-strawberry" style="height: 75%;"></div>
+                    <div class="tapioca"></div>
+                </div>
+                <div class="price-tag"><div class="vol">500 мл</div><div class="cost">270 ₽</div></div>
+            </div>
+        </div>
+
+        <div class="menu-card">
+            <div class="drink-info">
+                <h2 class="drink-title">Манго-Облепиха</h2>
+                <p class="drink-desc">Тропическая сладость манго, оттененная ярким сиропом сибирской облепихи.</p>
+                <div class="badges"><div class="badge">Тропики & Сибирь</div></div>
+            </div>
+            <div class="cup-wrapper">
+                <div class="boba-cup">
+                    <div class="liquid color-mango-buck" style="height: 75%;"></div>
+                    <div class="tapioca"></div>
+                </div>
+                <div class="price-tag"><div class="vol">500 мл</div><div class="cost">270 ₽</div></div>
+            </div>
+        </div>
+
+        <div class="menu-card" style="grid-column: 1 / -1; max-width: 580px; margin: 0 auto;">
+            <div class="drink-info">
+                <h2 class="drink-title">Бабл Гам</h2>
+                <p class="drink-desc">Тот самый вкус жвачки из детства. Яркий цвет, сладкий аромат и отличное настроение.</p>
+                <div class="badges"><div class="badge">Вкус детства</div></div>
+            </div>
+            <div class="cup-wrapper">
+                <div class="boba-cup">
+                    <div class="liquid color-bubblegum" style="height: 75%;"></div>
+                    <div class="tapioca"></div>
+                </div>
+                <div class="price-tag"><div class="vol">500 мл</div><div class="cost">270 ₽</div></div>
+            </div>
+        </div>
+
+    </div>
+
+    <button class="btn-back" id="btnBack">ВЕРНУТЬСЯ К ВЫЗОВУ</button>
+    <div class="timer-bar"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBa3MKrLHcRPauIyzxgxfNpLUphmehJAkg",
+          authDomain: "moon-logistik.firebaseapp.com",
+          databaseURL: "https://moon-logistik-default-rtdb.firebaseio.com",
+          projectId: "moon-logistik"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const infoRef = ref(db, 'info_display');
+
+        function goBackToMain() {
+            set(infoRef, { active: false, url: '' }).then(() => {
+                window.location.href = 'index.html';
+            });
+        }
+
+        let autoCloseTimer = setTimeout(() => { goBackToMain(); }, 120000); 
+
+        document.getElementById('btnBack').addEventListener('click', () => {
+            clearTimeout(autoCloseTimer);
+            goBackToMain();
+        });
+
+        onValue(infoRef, (snapshot) => {
+            const data = snapshot.val();
+            if (!data || !data.active) {
+                window.location.href = 'index.html';
+            } else if (data.url && !window.location.pathname.endsWith(data.url)) {
+                window.location.href = data.url;
+            }
+        });
+    </script>
+</body>
+</html>
