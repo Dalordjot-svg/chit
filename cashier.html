@@ -10,136 +10,60 @@
         * { box-sizing: border-box; }
 
         body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #121212;
-            color: #ffffff;
-            font-family: 'Roboto', sans-serif;
-            transition: background-color 0.3s ease-in-out;
-            overflow: hidden;
-            user-select: none;
+            margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; height: 100vh; background-color: #121212; color: #ffffff;
+            font-family: 'Roboto', sans-serif; transition: background-color 0.3s; overflow: hidden;
         }
 
-        /* Верхняя панель */
-        .top-bar {
-            position: absolute;
-            top: 0;
-            width: 100%;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            background: rgba(0, 0, 0, 0.5);
-            font-size: 14px;
-            color: #888;
-            z-index: 100;
-        }
+        .top-bar { position: absolute; top: 0; width: 100%; padding: 15px 20px; display: flex; justify-content: space-between; background: rgba(0, 0, 0, 0.5); font-size: 14px; color: #888; z-index: 100; }
+        .screen-status { color: #ffca28; font-weight: bold; display: none; }
 
-        .screen-status {
-            color: #ffca28;
-            font-weight: bold;
-            display: none;
-        }
-
-        /* Главная карточка */
         .dashboard {
-            background: #1e1e1e;
-            padding: 40px 30px;
-            border-radius: 24px;
-            text-align: center;
-            width: 90%;
-            max-width: 420px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-            border: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            z-index: 10;
+            background: #1e1e1e; padding: 30px; border-radius: 24px; text-align: center;
+            width: 90%; max-width: 420px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            border: 1px solid #333; display: flex; flex-direction: column; align-items: center;
         }
 
-        .icon-circle {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: #2a2a2a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 50px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
+        .icon-circle { width: 80px; height: 80px; border-radius: 50%; background: #2a2a2a; display: flex; justify-content: center; align-items: center; font-size: 40px; margin-bottom: 15px; }
+        h1 { margin: 0 0 10px; font-size: 24px; }
+        p { color: #aaa; margin-bottom: 20px; font-size: 14px; }
 
-        h1 { margin: 0 0 10px; font-size: 26px; font-weight: 900; letter-spacing: 1px; }
-        p { color: #aaa; margin-bottom: 30px; font-size: 15px; line-height: 1.4; }
+        .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: all 0.2s; color: white; margin-bottom: 10px; }
+        .btn:active { transform: scale(0.95); }
+        .btn-activate { background: #4CAF50; }
+        .btn-stop { background: #ff4444; display: none; animation: pulse-btn 1s infinite alternate; }
 
-        /* Кнопки */
-        .btn {
+        @keyframes pulse-btn { 0% { transform: scale(1); box-shadow: 0 0 10px #ff4444; } 100% { transform: scale(1.05); box-shadow: 0 0 30px #ff4444; } }
+
+        .alert-mode { background-color: #3e0000; }
+        .alert-mode .dashboard { border-color: #ff4444; }
+
+        /* --- БЛОК ЗАПРОСА ЧАЕВЫХ --- */
+        .tips-panel {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
             width: 100%;
-            padding: 20px;
-            border: none;
-            border-radius: 16px;
+            display: none; /* Покажем после активации пульта */
+        }
+        
+        .tips-input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #555;
+            background: #2a2a2a;
+            color: white;
             font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.2s;
+            text-align: center;
+            margin-bottom: 10px;
             outline: none;
         }
-
-        .btn:active { transform: scale(0.95); }
-
-        .btn-activate {
-            background: linear-gradient(135deg, #4CAF50, #2E7D32);
-            color: white;
-            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3);
-        }
-
-        .btn-stop {
-            background: linear-gradient(135deg, #ff4444, #cc0000);
-            color: white;
-            display: none;
-            font-size: 24px;
-            box-shadow: 0 0 30px rgba(255, 68, 68, 0.6);
-            animation: pulse-btn 1s infinite alternate;
-        }
-
-        /* Анимации тревоги */
-        @keyframes pulse-btn {
-            0% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 68, 68, 0.6); }
-            100% { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 68, 68, 1); }
-        }
-
-        .alert-mode { 
-            background-color: #3e0000; 
-            animation: bg-flash 0.8s infinite alternate;
-        }
-
-        @keyframes bg-flash {
-            0% { background-color: #3e0000; }
-            100% { background-color: #5c0000; }
-        }
-
-        .alert-mode .dashboard {
-            border-color: #ff4444;
-            box-shadow: 0 0 50px rgba(255, 68, 68, 0.3);
-        }
-
-        .alert-mode .icon-circle {
-            background: #ff4444;
-            animation: shake 0.4s infinite;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(10deg); }
-            75% { transform: rotate(-10deg); }
+        .tips-input:focus { border-color: #ffca28; }
+        
+        .btn-tips {
+            background: linear-gradient(135deg, #ffca28, #ff8f00);
+            color: #3e2723;
         }
 
     </style>
@@ -147,20 +71,23 @@
 <body id="body">
 
     <div class="top-bar">
-        <span id="clock">00:00</span>
         <span class="screen-status" id="screenStatus">☀️ Экран: ON</span>
         <span id="connStatus">🔴 Отключено</span>
     </div>
 
     <div class="dashboard">
-        <div class="icon-circle" id="iconBox">
-            <span id="icon">💤</span>
-        </div>
+        <div class="icon-circle" id="iconBox"><span id="icon">💤</span></div>
         <h1 id="title">Система спит</h1>
-        <p id="subtitle">Активируйте пульт. Можно включить свою музыку, оповещение сработает поверх нее.</p>
+        <p id="subtitle">Активируйте пульт.</p>
 
-        <button id="activateBtn" class="btn btn-activate">▶ Активировать пульт</button>
+        <button id="activateBtn" class="btn btn-activate">▶ Активировать</button>
         <button id="stopBtn" class="btn btn-stop">ПРИНЯТЬ ВЫЗОВ</button>
+
+        <div class="tips-panel" id="tipsPanel">
+            <h3 style="margin: 0 0 10px; font-size: 16px; color: #ffca28;">Запросить чаевые</h3>
+            <input type="number" id="billAmount" class="tips-input" placeholder="Сумма заказа (₽)">
+            <button id="sendTipsBtn" class="btn btn-tips">Отправить на экран</button>
+        </div>
     </div>
 
     <script type="module">
@@ -174,170 +101,98 @@
           projectId: "moon-logistik",
           storageBucket: "moon-logistik.firebasestorage.app",
           messagingSenderId: "335239459996",
-          appId: "1:335239459996:web:98a3cd3508767cfde6a959",
-          measurementId: "G-N3GHR5KS7Q"
+          appId: "1:335239459996:web:98a3cd3508767cfde6a959"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const statusRef = ref(db, 'cashier_call/status');
+        const tipRequestRef = ref(db, 'tips_request');
 
         const activateBtn = document.getElementById('activateBtn');
         const stopBtn = document.getElementById('stopBtn');
+        const tipsPanel = document.getElementById('tipsPanel');
+        const sendTipsBtn = document.getElementById('sendTipsBtn');
+        const billAmountInput = document.getElementById('billAmount');
         const title = document.getElementById('title');
-        const subtitle = document.getElementById('subtitle');
-        const icon = document.getElementById('icon');
-        const body = document.getElementById('body');
-        const connStatus = document.getElementById('connStatus');
-        const clockEl = document.getElementById('clock');
-        const screenStatus = document.getElementById('screenStatus');
-
-        // Часы
-        setInterval(() => {
-            const now = new Date();
-            clockEl.textContent = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-        }, 1000);
-
-        // Только сирена, без фонового "тихого" звука
+        
         const sirenAudio = new Audio("./siren.mp3");
         sirenAudio.loop = true;
         sirenAudio.preload = "auto";
-
+        
         let soundEnabled = false;
         let wakeLock = null;
 
-        // --- ЖЕЛЕЗНОЕ УДЕРЖАНИЕ ЭКРАНА ---
         async function keepScreenAwake() {
             if (!soundEnabled) return; 
-            
             try {
-                if ('wakeLock' in navigator) {
-                    if (wakeLock !== null) return; 
-                    
+                if ('wakeLock' in navigator && wakeLock === null) {
                     wakeLock = await navigator.wakeLock.request('screen');
-                    screenStatus.style.display = 'inline';
-                    screenStatus.style.color = '#ffca28';
-                    
-                    wakeLock.addEventListener('release', () => {
-                        wakeLock = null;
-                        screenStatus.style.color = '#888'; 
-                    });
+                    document.getElementById('screenStatus').style.display = 'inline';
+                    wakeLock.addEventListener('release', () => { wakeLock = null; });
                 }
-            } catch (err) {
-                console.log("Wake Lock заблокирован браузером:", err);
-                screenStatus.style.display = 'none';
-            }
+            } catch (err) {}
         }
-
-        // Восстанавливаем блокировку экрана при любом касании
         document.addEventListener('pointerdown', keepScreenAwake);
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') keepScreenAwake();
-        });
 
-        // 1. АКТИВАЦИЯ СИСТЕМЫ
         activateBtn.addEventListener('click', async () => {
-            try {
-                // Разрешения на уведомления
-                if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-                    await Notification.requestPermission();
-                }
-
-                // Просто "прогреваем" сирену, чтобы браузер разрешил ей играть позже
-                await sirenAudio.play();
-                sirenAudio.pause();
-                sirenAudio.currentTime = 0;
-
-                soundEnabled = true;
-                activateBtn.style.display = 'none';
-                
-                setReadyState();
-                keepScreenAwake();
-
-            } catch (err) {
-                alert("Ошибка: " + err.message + "\nПроверь файл siren.mp3");
-                console.error(err);
-            }
+            await sirenAudio.play(); sirenAudio.pause(); sirenAudio.currentTime = 0;
+            soundEnabled = true;
+            activateBtn.style.display = 'none';
+            tipsPanel.style.display = 'block'; // Показываем панель чаевых
+            title.textContent = "Пульт активен";
+            keepScreenAwake();
         });
 
-        // 2. СЛУШАЕМ БАЗУ
+        // Отправка запроса на чаевые
+        sendTipsBtn.addEventListener('click', () => {
+            const amount = parseFloat(billAmountInput.value);
+            if (!amount || amount <= 0) {
+                alert("Введите корректную сумму покупки!");
+                return;
+            }
+
+            // Отправляем в Firebase
+            set(tipRequestRef, {
+                active: true,
+                amount: amount,
+                timestamp: Date.now()
+            });
+
+            // Визуальный фидбек для сотрудника
+            const originalText = sendTipsBtn.textContent;
+            sendTipsBtn.textContent = "✔️ Отправлено!";
+            sendTipsBtn.style.background = "#4CAF50";
+            sendTipsBtn.style.color = "white";
+            billAmountInput.value = ""; // очищаем поле
+
+            setTimeout(() => {
+                sendTipsBtn.textContent = originalText;
+                sendTipsBtn.style.background = "linear-gradient(135deg, #ffca28, #ff8f00)";
+                sendTipsBtn.style.color = "#3e2723";
+            }, 2000);
+        });
+
+        // Логика тревоги (старая)
         onValue(statusRef, (snapshot) => {
             const data = snapshot.val();
-            const isCalling = data ? data.is_calling : false;
-
-            connStatus.textContent = "🟢 На связи";
-            connStatus.style.color = "#4CAF50";
-
-            if (isCalling) {
-                startAlarm();
+            if (data && data.is_calling) {
+                if (soundEnabled) {
+                    document.getElementById('body').classList.add('alert-mode');
+                    stopBtn.style.display = 'block';
+                    sirenAudio.play().catch(e => {});
+                    if (navigator.vibrate) navigator.vibrate([1000, 500, 1000]);
+                }
             } else {
-                stopAlarmLocal();
+                document.getElementById('body').classList.remove('alert-mode');
+                stopBtn.style.display = 'none';
+                sirenAudio.pause(); sirenAudio.currentTime = 0;
             }
         });
 
-        // 3. ЛОГИКА ТРЕВОГИ
-        function startAlarm() {
-            if (!soundEnabled) return; 
-
-            body.classList.add('alert-mode');
-            icon.textContent = "🛎️";
-            title.textContent = "ВЫЗОВ!";
-            subtitle.textContent = "Сотрудник, подойдите к столику!";
-            
-            stopBtn.style.display = 'block'; 
-
-            // Включаем сирену (твоя фоновая музыка может приглушиться или стать на паузу в зависимости от настроек телефона)
-            sirenAudio.play().catch(e => console.error(e));
-
-            if (navigator.vibrate) navigator.vibrate([1000, 500, 1000, 500, 1000]);
-
-            try {
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification("🚨 ВЫЗОВ!", {
-                        body: "Вас ожидают.",
-                        icon: "https://cdn-icons-png.flaticon.com/512/1086/1086581.png",
-                        requireInteraction: true
-                    });
-                }
-            } catch(e) {}
-        }
-
-        // 4. СБРОС ТРЕВОГИ
-        stopBtn.addEventListener('click', confirmReset);
-
-        function confirmReset() {
-            stopAlarmLocal();
-            
-            set(statusRef, {
-                is_calling: false,
-                timestamp: Date.now()
-            }).catch(err => {
-                connStatus.textContent = "⚠️ Ошибка связи";
-                connStatus.style.color = "#ff4444";
-            });
-            
-            keepScreenAwake();
-        }
-
-        function stopAlarmLocal() {
-            body.classList.remove('alert-mode');
-            sirenAudio.pause();
-            sirenAudio.currentTime = 0;
-            
-            if (navigator.vibrate) navigator.vibrate(0);
-            
-            stopBtn.style.display = 'none';
-            
-            if (soundEnabled) {
-                setReadyState();
-            }
-        }
-
-        function setReadyState() {
-            title.textContent = "Ожидание вызова";
-            subtitle.textContent = "Пульт активен. Экран не погаснет. Можно слушать музыку в других приложениях.";
-            icon.textContent = "👂";
-        }
+        stopBtn.addEventListener('click', () => {
+            set(statusRef, { is_calling: false });
+        });
 
     </script>
 </body>
