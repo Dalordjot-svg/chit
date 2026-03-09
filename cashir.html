@@ -61,6 +61,20 @@
         .btn-info:active { transform: scale(0.95); background: rgba(255, 234, 167, 0.15); }
         .btn-info.close-info { background: rgba(255, 71, 87, 0.1); color: #ff4757; border-color: rgba(255, 71, 87, 0.3); text-align: center; margin-top: 10px; }
 
+        /* ВИЗИТКА И СООБЩЕНИЯ */
+        .custom-input {
+            width: 100%; padding: 18px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.5); color: #fff; font-size: 15px; font-family: 'Montserrat', sans-serif;
+            margin-bottom: 12px; outline: none;
+        }
+        .custom-input:focus { border-color: #ffeaa7; }
+        .btn-send-msg {
+            width: 100%; padding: 18px; border: none; border-radius: 16px; font-size: 15px; font-weight: 800;
+            background: linear-gradient(135deg, #f0932b, #eb4d4b); color: #fff; cursor: pointer;
+            text-transform: uppercase; transition: all 0.2s; letter-spacing: 1px;
+        }
+        .btn-send-msg:active { transform: scale(0.95); }
+
         /* КАССА И СБРОС */
         .calc-display { width: 100%; background: #000; border: 2px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; font-size: 36px; font-weight: 900; color: #ffeaa7; text-align: right; margin-bottom: 20px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; box-shadow: inset 0 4px 10px rgba(0,0,0,0.8); }
         .calc-display.error { color: #ff4757; }
@@ -74,7 +88,6 @@
         .btn-send { width: 100%; padding: 20px; border: none; border-radius: 16px; font-size: 16px; font-weight: 900; background: #ffeaa7; color: #0b0e14; cursor: pointer; text-transform: uppercase; transition: transform 0.2s; letter-spacing: 1px; }
         .btn-send:active { transform: scale(0.95); }
 
-        /* КНОПКА СБРОСА ЧАЕВЫХ */
         .btn-reset-tips {
             width: 100%; padding: 20px; border: 2px dashed #ff4757; border-radius: 16px; font-size: 14px;
             font-weight: 800; background: rgba(255, 71, 87, 0.05); color: #ff4757; cursor: pointer;
@@ -125,6 +138,12 @@
                     <button id="btnModeCall" class="btn-mode active">🛎️ Экран Вызова</button>
                     <button id="btnModeReg" class="btn-mode">🛒 Экран "Касса Активна"</button>
                 </div>
+            </div>
+
+            <div class="card">
+                <h3>Вывести надпись / Визитку</h3>
+                <input type="text" id="customMsgInput" class="custom-input" placeholder="Напр: Скидка на торты 15%...">
+                <button id="btnSendCustomMsg" class="btn-send-msg">Отправить на экран</button>
             </div>
             
             <div class="card">
@@ -203,6 +222,7 @@
         const tipRequestRef = ref(db, 'tips_request');
         const modeRef = ref(db, 'screen_mode');
         const infoRef = ref(db, 'info_display');
+        const customDisplayRef = ref(db, 'custom_display'); // Ссылка для визитки
 
         const body = document.getElementById('body');
         const activationScreen = document.getElementById('activationScreen');
@@ -235,6 +255,9 @@
         const btnModeReg = document.getElementById('btnModeReg');
         const articleBtns = document.querySelectorAll('.article-btn');
         const btnCloseInfo = document.getElementById('btnCloseInfo');
+        
+        const customMsgInput = document.getElementById('customMsgInput');
+        const btnSendCustomMsg = document.getElementById('btnSendCustomMsg');
 
         const calcDisplay = document.getElementById('calcDisplay');
         const sendTipsBtn = document.getElementById('sendTipsBtn');
@@ -273,6 +296,22 @@
         btnModeCall.addEventListener('click', () => set(modeRef, 'call'));
         btnModeReg.addEventListener('click', () => set(modeRef, 'register'));
 
+        // ОТПРАВКА ВИЗИТКИ С ТЕКСТОМ
+        btnSendCustomMsg.addEventListener('click', () => {
+            const textValue = customMsgInput.value;
+            set(customDisplayRef, { active: true, text: textValue });
+            
+            const originalText = btnSendCustomMsg.textContent;
+            btnSendCustomMsg.textContent = "✔️ ОТПРАВЛЕНО";
+            btnSendCustomMsg.style.background = "#2ed573";
+            
+            setTimeout(() => { 
+                btnSendCustomMsg.textContent = originalText; 
+                btnSendCustomMsg.style.background = ""; 
+                customMsgInput.value = ""; // очищаем поле
+            }, 1500);
+        });
+
         articleBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const url = e.currentTarget.dataset.url;
@@ -283,7 +322,11 @@
             });
         });
 
-        btnCloseInfo.addEventListener('click', () => { set(infoRef, { active: false, url: '' }); });
+        // Кнопка возврата закрывает и меню, и визитку
+        btnCloseInfo.addEventListener('click', () => { 
+            set(infoRef, { active: false, url: '' }); 
+            set(customDisplayRef, { active: false, text: '' });
+        });
 
         onValue(statusRef, (snapshot) => {
             const data = snapshot.val();
@@ -348,9 +391,9 @@
             setTimeout(() => { sendTipsBtn.textContent = originalText; sendTipsBtn.style.background = "#ffeaa7"; sendTipsBtn.style.color = "#0b0e14"; }, 2000);
         });
 
-        // ЛОГИКА СБРОСА ОПЛАТЫ
+        // СБРОС ОПЛАТЫ / ЧАЕВЫХ
         resetTipsBtn.addEventListener('click', () => {
-            set(tipRequestRef, { active: false }); // Выключаем режим оплаты в БД
+            set(tipRequestRef, { active: false }); 
             
             const originalText = resetTipsBtn.textContent;
             resetTipsBtn.textContent = "✔️ ЭКРАН СБРОШЕН";
