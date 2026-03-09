@@ -159,7 +159,7 @@
             background: rgba(0,0,0,0.4); padding: 20px 25px; border-radius: 16px; 
             border-left: 4px solid #ffeaa7; display: none; 
         }
-        .bc-info p.visible { display: block; } /* Показывается только если есть текст */
+        .bc-info p.visible { display: block; }
 
     </style>
 </head>
@@ -266,7 +266,6 @@
         const tipRequestRef = ref(db, 'tips_request');
         const modeRef = ref(db, 'screen_mode'); 
         const infoRef = ref(db, 'info_display'); 
-        // Новая ссылка для управления визиткой
         const customDisplayRef = ref(db, 'custom_display');
 
         const topLogo = document.getElementById('topLogo');
@@ -303,14 +302,12 @@
             greetingContainer.classList.add('hidden-scale');
             businessCardContainer.classList.add('hidden-scale');
 
-            // Прячем логотип только при оплате или если визитка активна
             if (isPaymentActive || isBusinessCardActive) {
                 topLogo.classList.add('hidden'); 
             } else {
                 topLogo.classList.remove('hidden'); 
             }
 
-            // Блокируют экраны (Приоритет: Оплата -> Визитка -> Дефолтные экраны)
             if (isPaymentActive) return;
 
             if (isBusinessCardActive) {
@@ -318,7 +315,6 @@
                 return;
             }
 
-            // Стандартные режимы
             if (currentMode === 'call') {
                 callContainer.classList.remove('hidden-scale');
             } else if (currentMode === 'register') {
@@ -333,20 +329,17 @@
             }
         }
 
-        // --- СЛУШАТЕЛЬ РЕДИРЕКТА ---
         onValue(infoRef, (snapshot) => {
             const data = snapshot.val();
             if (data && data.active && data.url) { window.location.href = data.url; }
         });
 
-        // --- СЛУШАТЕЛЬ ВИЗИТКИ И ТЕКСТА ---
         let bcTimeout;
         onValue(customDisplayRef, (snapshot) => {
             const data = snapshot.val();
             if (data && data.active) {
                 isBusinessCardActive = true;
                 
-                // Вставляем текст, если он есть
                 if (data.text && data.text.trim() !== '') {
                     customMessageText.textContent = data.text;
                     customMessageText.classList.add('visible');
@@ -357,7 +350,6 @@
 
                 updateScreenVisibility();
 
-                // Автоматически закрываем визитку через 2 минуты
                 clearTimeout(bcTimeout);
                 bcTimeout = setTimeout(() => {
                     set(customDisplayRef, { active: false, text: '' });
