@@ -2,65 +2,293 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Моя Касса</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Смарт Касса</title>
     <style>
+        /* Основные стили (Темная тема) */
         :root {
-            --primary: #4F46E5;
-            --bg: #F3F4F6;
-            --card: #FFFFFF;
-            --text: #1F2937;
-            --danger: #EF4444;
-            --success: #10B981;
+            --bg-deep-dark: #000000;
+            --bg-card: #1C1C1E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8E8E93;
+            --accent-green: #32D74B;
+            --accent-red: #FF453A;
+            --accent-blue: #0A84FF;
+            --status-bar-height: 44px;
         }
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        body { margin: 0; background-color: var(--bg); color: var(--text); padding-bottom: 80px; }
+        body { margin: 0; background-color: var(--bg-deep-dark); color: var(--text-primary); padding-bottom: 80px; overflow-x: hidden; }
         
-        .screen { display: none; padding: 20px; }
+        .screen { display: none; height: 100vh; overflow-y: auto; }
         .screen.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         h1, h2, h3 { margin-top: 0; }
-        .card { background: var(--card); padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        
-        input, button { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 16px; outline: none; }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2); }
-        
-        .flex-row { display: flex; gap: 10px; }
-        .flex-row input { flex: 1; }
-        
-        button { background-color: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.98); }
-        button.danger { background-color: var(--danger); }
-        button.success { background-color: var(--success); }
-        button.secondary { background-color: #E5E7EB; color: var(--text); }
-        
-        .qty-controls { display: flex; align-items: center; justify-content: space-between; background: #F9FAFB; border-radius: 8px; padding: 5px; margin-bottom: 10px;}
-        .qty-controls button { width: 40px; margin: 0; padding: 8px; background: white; color: var(--text); border: 1px solid #E5E7EB;}
-        .qty-controls span { font-weight: bold; font-size: 18px; }
+        p { color: var(--text-secondary); margin: 5px 0; }
 
-        .receipt-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #E5E7EB; padding: 10px 0; }
-        .receipt-item:last-child { border-bottom: none; }
-        .receipt-total { font-size: 20px; font-weight: bold; text-align: right; margin: 10px 0; color: var(--primary); }
+        /* Имитация статус-бара */
+        .fake-status-bar {
+            height: var(--status-bar-height);
+            background: var(--bg-deep-dark);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 14px;
+            position: fixed;
+            top: 0; width: 100%;
+            z-index: 1000;
+        }
+        .time-area { display: flex; align-items: center; gap: 8px;}
+        .icon-area { display: flex; gap: 5px;}
+
+        /* Общие элементы */
+        .screen-content { padding: 20px; padding-top: calc(var(--status-bar-height) + 20px); }
+        .card { background: var(--bg-card); padding: 15px; border-radius: 12px; margin-bottom: 15px; }
         
-        .note-list { font-size: 14px; color: #4B5563; }
-        .note-list li { margin-bottom: 5px; }
+        input, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; font-size: 16px; outline: none; transition: 0.2s; }
+        input { background: #2C2C2E; color: white; border: 1px solid #3A3A3C;}
+        input:focus { border-color: var(--accent-blue); }
+        
+        button { background-color: var(--accent-blue); color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:active { opacity: 0.8; transform: scale(0.98); }
+        button.success { background-color: var(--accent-green); }
+        button.danger { background-color: var(--accent-red); }
+        button.secondary { background-color: #3A3A3C; color: var(--text-primary); }
+        
+        /* Кнопки плюс/минус */
+        .qty-controls { display: flex; align-items: center; justify-content: space-between; background: #2C2C2E; border-radius: 8px; padding: 5px; margin-bottom: 10px;}
+        .qty-controls button { width: 40px; margin: 0; padding: 8px; background: #3A3A3C; border: none;}
+        .qty-controls span { font-weight: bold; font-size: 18px; color: var(--text-primary); }
+
+        /* ЭКРАН 1: НАЧАЛО СМЕНЫ */
+        #screen-start .card { margin-top: 20vh; text-align: center; }
+
+        /* ЭКРАН 2: КАССА (Продажа) */
+        .pos-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: left;}
+        
+        /* Центральный элемент при пустом чеке */
+        .empty-receipt-area {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: calc(20vh - var(--status-bar-height));
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        .empty-receipt-area.visible { display: flex; }
+        /* Простая SVG иконка сканера */
+        .scanner-icon {
+            width: 80px; height: 80px;
+            background: rgba(142, 142, 147, 0.1);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 15px;
+        }
+        .scanner-icon svg { fill: var(--text-secondary); width: 40px; }
+
+        /* Список товаров */
+        #receipt-list { margin-bottom: 10px; }
+        .receipt-item-wrapper { position: relative; width: 100%; height: auto; overflow: hidden; margin-bottom: 10px; border-radius: 10px;}
+        
+        /* Кнопки действий при свайпе */
+        .swipe-actions {
+            position: absolute;
+            top: 0; right: 0; height: 100%;
+            display: flex;
+            transition: transform 0.3s ease;
+            transform: translateX(100%); /* Изначально скрыты */
+            z-index: 1;
+        }
+        .action-btn {
+            height: 100%; width: 80px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; border: none; font-size: 12px; font-weight: bold;
+            padding: 5px;
+        }
+        .action-btn.delete { background-color: var(--accent-red); }
+        .action-btn.edit { background-color: var(--accent-blue); }
+
+        /* Сам товар (то, что свайпается) */
+        .receipt-item {
+            position: relative;
+            background: var(--bg-card);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            transition: transform 0.3s ease;
+            transform: translateX(0);
+            z-index: 2; /* Поверх кнопок */
+        }
+        
+        .item-info h4 { margin: 0; font-size: 16px; font-weight: 500;}
+        .item-info span { font-size: 12px; color: var(--text-secondary); }
+        .item-total-price { font-size: 16px; font-weight: 600;}
+
+        /* Зеленая кнопка +ТОВАР (копия с фото) */
+        .add-item-fab {
+            background-color: var(--accent-green);
+            color: white;
+            border: none;
+            border-radius: 25px; /* Овальная */
+            padding: 10px 20px;
+            display: flex; align-items: center; gap: 8px;
+            position: fixed;
+            bottom: 100px; right: 20px;
+            width: auto; margin: 0;
+            z-index: 10;
+            font-size: 16px; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Нижний бар "К ОПЛАТЕ" и "Закрыть смену" */
+        .bottom-pay-bar {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            height: 70px;
+            background: var(--bg-deep-dark);
+            border-top: 1px solid #1C1C1E;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 5;
+            padding-bottom: env(safe-area-inset-bottom); /* Поддержка челки iPhone */
+        }
+        .total-price { font-size: 24px; font-weight: 700;}
+
+        /* Кнопка закрытия смены с зажатием */
+        .close-shift-btn {
+            background-color: #3A3A3C;
+            color: #FF453A; /* Текст красный */
+            border: none;
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 12px;
+            font-weight: bold;
+            width: auto; margin: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        /* Прогресс-бар зажатия */
+        .close-shift-btn .hold-progress {
+            position: absolute;
+            top: 0; left: 0; height: 100%;
+            background-color: var(--accent-red);
+            width: 0%;
+            transition: width 0.1s linear;
+            z-index: -1;
+        }
+
+        /* МОДАЛЬНОЕ ОКНО */
+        .modal-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%; max-width: 400px;
+        }
+
+        /* Системные кнопки Android (внизу) */
+        .android-nav-imitator {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 30px;
+            background: var(--bg-deep-dark);
+            display: flex; justify-content: space-around; align-items: center;
+            padding-bottom: 5px; z-index: 1000; display: none; /* Скрыть по умолчанию, показать на Android */
+        }
+        .nav-imitator-icon { width: 15px; height: 15px; border: 2px solid #8E8E93; border-radius: 50%;}
     </style>
 </head>
-<body>
+<body onload="checkDeviceType()">
+
+    <div class="fake-status-bar">
+        <div class="time-area">
+            <svg style="width:16px; fill:#fff" viewBox="0 0 24 24"><path d="M17.9,17.39C17.64,16.59 16.89,16 16,16H15V13A1,1 0 0,0 14,12H8V10H10A1,1 0 0,0 11,9V7H13A2,2 0 0,0 15,5V4.59C17.93,5.77 20,8.64 20,12C20,14.08 19.2,15.97 17.9,17.39M11,19.93C7.05,19.44 4,16.08 4,12C4,11.38 4.08,10.78 4.21,10.21L9,15V16A2,2 0 0,0 11,18M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" /></svg>
+            <span id="stat-time">12:38</span>
+        </div>
+        <div class="icon-area">
+            <svg style="width:14px; fill:#fff" viewBox="0 0 24 24"><path d="M14.88,16.29L13,18.17V14.41M13,5.83L14.88,7.71L13,9.59M17.71,7.71L12,2H11V9.58L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L11,14.41V22H12L17.71,16.29L13.41,12L17.71,7.71Z" /></svg>
+            <svg style="width:14px; fill:#fff" viewBox="0 0 24 24"><path d="M12,21.05C11.5,21.05 11.1,20.85 10.75,20.5L3.5,13.25C2.8,12.55 2.8,11.45 3.5,10.75L10.75,3.5C11.45,2.8 12.55,2.8 13.25,3.5L20.5,10.75C21.2,11.45 21.2,12.55 20.5,13.25L13.25,20.5C12.9,20.85 12.5,21.05 12,21.05Z" /></svg>
+            <svg style="width:14px; fill:#fff" viewBox="0 0 24 24"><path d="M16.67,4H15V2H9V4H7.33A1.33,1.33 0 0,0 6,5.33V20.67C6,21.4 6.6,22 7.33,22H16.67A1.33,1.33 0 0,0 18,20.67V5.33A1.33,1.33 0 0,0 16.67,4Z" /></svg>
+        </div>
+    </div>
 
     <div id="screen-start" class="screen active">
-        <div class="card" style="margin-top: 20vh; text-align: center;">
-            <h2>Открытие смены</h2>
-            <p>Введите сумму наличных в кассе</p>
-            <input type="number" id="start-cash" placeholder="Сумма в рублях" inputmode="decimal">
-            <button onclick="startShift()" class="success">Начать смену</button>
+        <div class="screen-content">
+            <div class="card">
+                <h2>Открытие смены</h2>
+                <p>Введите сумму наличных в кассе</p>
+                <input type="number" id="start-cash" placeholder="Сумма в рублях" inputmode="decimal">
+                <button onclick="startShift()" class="success">Начать смену</button>
+            </div>
         </div>
     </div>
 
     <div id="screen-pos" class="screen">
-        <div class="card">
-            <h3 style="margin-bottom: 5px;">Новая позиция</h3>
+        <div class="screen-content">
+            <div class="pos-header">Продажа</div>
+            
+            <div id="empty-receipt" class="empty-receipt-area visible">
+                <div class="scanner-icon">
+                    <svg viewBox="0 0 24 24"><path d="M19.12,17.1L18.7,16.5C18.1,15.7 17.5,14.8 17.2,14.2L16.2,12.5L15.3,10.8C15.1,10.3 15,10 15,9.7C15,8.9 15.3,8.1 15.8,7.5C16.3,6.9 17.1,6.5 17.9,6.5C18.7,6.5 19.5,6.8 20,7.4C20.6,8 20.9,8.7 20.9,9.5C20.9,9.8 20.8,10.2 20.7,10.6L19.12,17.1M13.5,19C13.5,19.3 13.5,19.5 13.5,19.7V22H10.5V19.7C10.5,19.5 10.5,19.3 10.5,19L10.5,13.7C10.5,12.7 10.1,12 9.4,11.3C8.7,10.6 8,10.2 7,10.2H3.5C3,10.2 2.7,10 2.5,9.7L1.2,7.5C1.1,7.2 1,6.9 1,6.5C1,5.6 1.3,4.8 1.9,4.2C2.5,3.6 3.3,3.3 4.1,3.3H11V2H13V3.3H19.9C20.7,3.3 21.5,3.6 22.1,4.2C22.7,4.8 23,5.6 23,6.5C23,6.9 22.9,7.3 22.8,7.7L21.5,9.7C21.3,10 21,10.2 20.5,10.2H17C16,10.2 15.3,10.6 14.6,11.3C13.9,12 13.5,12.7 13.5,13.7V19M11,19L11,13.7C11,13.2 10.8,12.8 10.5,12.5C10.2,12.2 9.8,12 9.4,12H7V13H9.4C9.6,13 9.7,13.1 9.8,13.2C9.9,13.3 10,13.5 10,13.7V19H11M11,6.5H4.1C4,6.5 3.9,6.5 3.8,6.6L4.5,7.7H7C8,7.7 8.8,8.1 9.4,8.8C10,9.5 10.3,10.3 10.3,11.2V11.7L11,11.7V6.5M13,6.5V11.7L13.7,11.7V11.2C13.7,10.3 14,9.5 14.6,8.8C15.2,8.1 16,7.7 17,7.7H19.5L20.2,6.6C20.1,6.5 20,6.5 19.9,6.5H13" /></svg>
+                </div>
+                <span>Отсканируйте товар или добавьте из каталога</span>
+            </div>
+
+            <div id="receipt-list"></div>
+        </div>
+
+        <button onclick="openAddItemModal()" class="add-item-fab">
+            <svg style="width:16px; height:16px; fill:#fff" viewBox="0 0 24 24"><path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" /></svg>
+            <span>+ ТОВАР</span>
+        </button>
+
+        <div class="bottom-pay-bar">
+            <button id="btn-close-shift" class="close-shift-btn">
+                <span>Закрыть смену</span>
+                <div class="hold-progress"></div>
+            </button>
+            <div class="total-area">
+                <span>К ОПЛАТЕ</span>
+                <span id="total-price" class="total-price">0 ₽</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-report" class="screen">
+        <div class="screen-content">
+            <div class="card">
+                <h2>Итог по смене</h2>
+                <p><strong>Время начала:</strong> <span id="rep-start-time"></span></p>
+                <p><strong>Время закрытия:</strong> <span id="rep-end-time"></span></p>
+                <hr style="border-color:#1C1C1E">
+                <p><strong>Было в кассе:</strong> <span id="rep-start-cash"></span> ₽</p>
+                <p><strong>Всего продано на сумму:</strong> <span id="rep-sales"></span> ₽</p>
+                <p><strong>Выручка (за этот чек):</strong> <span id="rep-check-revenue"></span> ₽</p>
+                <hr style="border-color:#1C1C1E">
+                <h3 style="color: var(--accent-green);">ОЖИДАЕМАЯ НАЛИЧКА: <span id="rep-final-cash"></span> ₽</h3>
+                
+                <div id="rep-notes-container" style="display: none;">
+                    <hr style="border-color:#1C1C1E">
+                    <strong>Заметки:</strong>
+                    <ul id="rep-notes-list" style="font-size:14px; color:#8E8E93; padding-left:15px;"></ul>
+                </div>
+            </div>
+            <button onclick="resetShiftApp()" class="success">Начать новую смену</button>
+        </div>
+    </div>
+
+    <div id="modal-add-item" class="modal-overlay">
+        <div class="modal">
+            <h3 id="modal-title">Новая позиция</h3>
             <input type="text" id="item-name" placeholder="Название товара" list="catalog-list" oninput="checkCatalog()">
             <datalist id="catalog-list"></datalist>
             
@@ -72,66 +300,45 @@
                 <button onclick="changeQty(1)" class="success">+</button>
             </div>
             
-            <button onclick="addItem()">Добавить в чек</button>
+            <button onclick="addItem()" id="modal-submit">Добавить в чек</button>
+            <button onclick="closeModal()" class="secondary">Отмена</button>
         </div>
-
-        <div class="card">
-            <h3>Текущий чек</h3>
-            <div id="receipt-list">
-                <div style="color: #9CA3AF; text-align: center; padding: 10px;">Чек пуст</div>
-            </div>
-            <div class="receipt-total" id="receipt-total">Итого: 0 руб.</div>
-        </div>
-
-        <div class="card">
-            <h3>Управление чеком</h3>
-            <div class="flex-row">
-                <input type="number" id="discount" placeholder="Скидка %" inputmode="decimal">
-                <button onclick="applyDiscount()" class="secondary" style="width: 100px;">Применить</button>
-            </div>
-            <div class="flex-row">
-                <input type="text" id="note-text" placeholder="Заметка...">
-                <button onclick="addNote()" class="secondary" style="width: 100px;">Добавить</button>
-            </div>
-            <ul id="notes-list" class="note-list"></ul>
-        </div>
-
-        <button onclick="finishReceipt()" class="danger">Закрыть чек и посмотреть отчет</button>
-    </div>
-
-    <div id="screen-report" class="screen">
-        <div class="card">
-            <h2>Отчет по чеку/смене</h2>
-            <p><strong>Время начала:</strong> <span id="rep-start-time"></span></p>
-            <p><strong>Время закрытия:</strong> <span id="rep-end-time"></span></p>
-            <hr>
-            <p><strong>Было в кассе:</strong> <span id="rep-start-cash"></span> руб.</p>
-            <p><strong>Продано на сумму:</strong> <span id="rep-sales"></span> руб.</p>
-            <p><strong>Скидка:</strong> <span id="rep-discount"></span> руб.</p>
-            <hr>
-            <h3 style="color: var(--success);">ОЖИДАЕМАЯ НАЛИЧКА: <span id="rep-final-cash"></span> руб.</h3>
-            
-            <div id="rep-notes-container" style="display: none;">
-                <hr>
-                <strong>Заметки:</strong>
-                <ul id="rep-notes-list" class="note-list"></ul>
-            </div>
-        </div>
-        <button onclick="resetApp()" class="success">Начать новый чек</button>
     </div>
 
     <script>
-        // База данных в браузере
+        // --- ПЕРЕМЕННЫЕ СОСТОЯНИЯ ---
         let catalog = JSON.parse(localStorage.getItem('kassaCatalog')) || {};
-        
-        // Переменные смены
         let initialCash = 0;
         let startTime = "";
-        let currentQty = 1;
+        let totalSales = 0; // Накопленная выручка за смену (если несколько чеков)
+        
         let receipt = [];
-        let discountPercent = 0;
-        let notes = [];
+        let currentEditingIndex = -1; // Индекс товара при редактировании
 
+        // Переменные для свайпа
+        let touchStartX = 0;
+        let activeSwipeElementWrapper = null;
+
+        // Переменные для зажатия кнопки
+        let holdTimer;
+        let isHolding = false;
+        const holdTimeMs = 2000; // 2 секунды
+
+        // --- ОБНОВЛЕНИЕ ВРЕМЕНИ В СТАТУС-БАРЕ ---
+        function updateStatTime() {
+            const now = new Date();
+            document.getElementById('stat-time').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+        updateStatTime();
+        setInterval(updateStatTime, 10000);
+
+        function checkDeviceType() {
+            if (/Android/i.test(navigator.userAgent)) {
+                // Если Android, можно показать нижний бар имитатор, но в PWA он мешает
+            }
+        }
+
+        // --- БАЗА ТОВАРОВ (КАТАЛОГ) ---
         function updateCatalogList() {
             const list = document.getElementById('catalog-list');
             list.innerHTML = '';
@@ -145,156 +352,297 @@
         function checkCatalog() {
             const name = document.getElementById('item-name').value.trim().toLowerCase();
             const priceInput = document.getElementById('item-price');
-            if (catalog[name]) {
-                priceInput.value = catalog[name]; // Автоподстановка цены
+            if (catalog[name] && priceInput.value === '') {
+                priceInput.value = catalog[name]; // Автоподстановка цены, если поле пустое
             }
         }
 
+        // --- УПРАВЛЕНИЕ ЭКРАНАМИ И МОДАЛКАМИ ---
         function switchScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
         }
 
+        function openAddItemModal(index = -1) {
+            const nameInput = document.getElementById('item-name');
+            const priceInput = document.getElementById('item-price');
+            const qtyInput = document.getElementById('item-qty');
+            const title = document.getElementById('modal-title');
+            const submitBtn = document.getElementById('modal-submit');
+
+            currentEditingIndex = index;
+            if (index !== -1) {
+                // Редактирование
+                const item = receipt[index];
+                nameInput.value = item.name;
+                priceInput.value = item.price;
+                qtyInput.innerText = item.qty;
+                title.innerText = "Редактирование";
+                submitBtn.innerText = "Сохранить";
+            } else {
+                // Новое
+                nameInput.value = '';
+                priceInput.value = '';
+                qtyInput.innerText = '1';
+                title.innerText = "Новая позиция";
+                submitBtn.innerText = "Добавить";
+            }
+            updateCatalogList();
+            document.getElementById('modal-add-item').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-add-item').classList.remove('active');
+        }
+
+        // --- ЛОГИКА СМЕНЫ ---
         function startShift() {
             const cashInput = document.getElementById('start-cash').value;
             initialCash = parseFloat(cashInput) || 0;
             const now = new Date();
             startTime = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             
-            updateCatalogList();
+            totalSales = 0; // Обнуляем накопленную выручку
+            renderReceipt(); // Обновить экран
             switchScreen('screen-pos');
+            setupHoldButton(); // Подключить логику зажатия
         }
 
+        // --- РАБОТА С ЧЕКОМ (Добавление, Кол-во) ---
         function changeQty(amount) {
-            currentQty += amount;
-            // Позволяем уходить в минус для возвратов
-            document.getElementById('item-qty').innerText = currentQty;
+            const qtyInput = document.getElementById('item-qty');
+            let current = parseInt(qtyInput.innerText) || 1;
+            current += amount;
+            // Разрешаем минус (возврат)
+            qtyInput.innerText = current;
         }
 
         function addItem() {
-            const nameInput = document.getElementById('item-name');
-            const priceInput = document.getElementById('item-price');
-            const name = nameInput.value.trim().toLowerCase();
-            const price = parseFloat(priceInput.value);
+            const name = document.getElementById('item-name').value.trim().toLowerCase();
+            const price = parseFloat(document.getElementById('item-price').value);
+            const qty = parseInt(document.getElementById('item-qty').innerText) || 1;
 
             if (!name || isNaN(price)) {
                 alert("Введите название и цену!");
                 return;
             }
 
-            // Сохраняем в память телефона
+            // Сохраняем/обновляем в каталоге
             if (!catalog[name] || catalog[name] !== price) {
                 catalog[name] = price;
                 localStorage.setItem('kassaCatalog', JSON.stringify(catalog));
-                updateCatalogList();
             }
 
-            receipt.push({
-                name: name,
-                price: price,
-                qty: currentQty,
-                total: price * currentQty
-            });
+            if (currentEditingIndex === -1) {
+                // Добавляем новый
+                receipt.push({ name, price, qty, total: price * qty });
+            } else {
+                // Обновляем существующий
+                receipt[currentEditingIndex] = { name, price, qty, total: price * qty };
+            }
 
-            // Сброс формы ввода
-            nameInput.value = '';
-            priceInput.value = '';
-            currentQty = 1;
-            document.getElementById('item-qty').innerText = currentQty;
-            
+            closeModal();
             renderReceipt();
         }
 
+        function deleteItem(index) {
+            if (confirm(`Удалить "${receipt[index].name}"?`)) {
+                receipt.splice(index, 1);
+                renderReceipt();
+            } else {
+                // Если отмена, сбросить свайп
+                if (activeSwipeElementWrapper) {
+                    closeSwipeActions(activeSwipeElementWrapper);
+                }
+            }
+        }
+
+        // --- ОТРИСОВКА ЧЕКА И ИТОГА ---
         function renderReceipt() {
             const list = document.getElementById('receipt-list');
+            const emptyArea = document.getElementById('empty-receipt');
             list.innerHTML = '';
             let total = 0;
 
             if (receipt.length === 0) {
-                list.innerHTML = '<div style="color: #9CA3AF; text-align: center; padding: 10px;">Чек пуст</div>';
+                emptyArea.classList.add('visible');
+            } else {
+                emptyArea.classList.remove('visible');
             }
 
             receipt.forEach((item, index) => {
                 total += item.total;
-                const type = item.qty < 0 ? "<span style='color:var(--danger)'>[Возврат]</span>" : "";
+                const typeText = item.qty < 0 ? "<span style='color:var(--accent-red)'>[Возврат]</span>" : "";
+                
                 list.innerHTML += `
-                    <div class="receipt-item">
-                        <div>
-                            <strong>${item.name}</strong> ${type}<br>
-                            <span style="font-size:12px; color:#6B7280">${item.price} x ${item.qty} шт.</span>
+                    <div class="receipt-item-wrapper">
+                        <div class="swipe-actions">
+                            <button onclick="editItemSwipe(${index})" class="action-btn edit">
+                                <svg style="width:16px; fill:#fff" viewBox="0 0 24 24"><path d="M20.71,7.04C21.1,6.65 21.1,6.02 20.71,5.63L18.37,3.29C17.98,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" /></svg>
+                                Изменить
+                            </button>
+                            <button onclick="deleteItem(${index})" class="action-btn delete">
+                                <svg style="width:16px; fill:#fff" viewBox="0 0 24 24"><path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19V4M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" /></svg>
+                                Удалить
+                            </button>
                         </div>
-                        <div>${item.total} руб.</div>
+                        <div class="receipt-item" ontouchstart="handleTouchStart(event)" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)" index="${index}">
+                            <div class="item-info">
+                                <h4>${item.name}</h4> ${typeText}<br>
+                                <span>${item.price} ₽ x ${item.qty} шт.</span>
+                            </div>
+                            <div class="item-total-price">${item.total.toFixed(1)} ₽</div>
+                        </div>
                     </div>
                 `;
             });
 
-            document.getElementById('receipt-total').innerText = `Итого: ${total} руб.`;
+            document.getElementById('total-price').innerText = `${total.toFixed(0)} ₽`;
         }
 
-        function applyDiscount() {
-            const discInput = document.getElementById('discount').value;
-            discountPercent = parseFloat(discInput) || 0;
-            alert(`Скидка ${discountPercent}% применена.`);
+        // --- ЛОГИКА РЕДАКТИРОВАНИЯ И УДАЛЕНИЯ СВАЙПОМ ---
+        function editItemSwipe(index) {
+            closeSwipeActions(activeSwipeElementWrapper);
+            openAddItemModal(index);
         }
 
-        function addNote() {
-            const text = document.getElementById('note-text').value.trim();
-            if (text) {
-                notes.push(text);
-                const li = document.createElement('li');
-                li.innerText = text;
-                document.getElementById('notes-list').appendChild(li);
-                document.getElementById('note-text').value = '';
+        // Обработка свайпа
+        function handleTouchStart(e) {
+            // Если свайп уже открыт на другом элементе, закрыть его
+            if (activeSwipeElementWrapper && activeSwipeElementWrapper !== e.currentTarget.parentNode) {
+                closeSwipeActions(activeSwipeElementWrapper);
+            }
+            touchStartX = e.touches[0].clientX;
+            e.currentTarget.style.transition = 'none'; // Отключить анимацию при движении
+            e.currentTarget.nextElementSibling.style.transition = 'none'; 
+        }
+
+        function handleTouchMove(e) {
+            const touchCurrentX = e.touches[0].clientX;
+            const diffX = touchStartX - touchCurrentX;
+            const element = e.currentTarget; // Сам товар
+            const actions = element.nextElementSibling; // Кнопки
+            const maxSwipe = 160; // Ширина двух кнопок
+
+            if (diffX > 0) {
+                // Свайп влево
+                if (diffX < maxSwipe) {
+                    element.style.transform = `translateX(-${diffX}px)`;
+                    actions.style.transform = `translateX(${maxSwipe - diffX}px)`;
+                } else {
+                    element.style.transform = `translateX(-${maxSwipe}px)`;
+                    actions.style.transform = `translateX(0)`;
+                }
+            } else if (diffX < 0) {
+                // Свайп вправо (закрыть)
+                element.style.transform = `translateX(0)`;
+                actions.style.transform = `translateX(${maxSwipe}px)`;
             }
         }
 
-        function finishReceipt() {
-            if(receipt.length === 0 && notes.length === 0) {
-                if(!confirm("Чек пуст. Вы уверены, что хотите завершить?")) return;
+        function handleTouchEnd(e) {
+            const element = e.currentTarget;
+            const actions = element.nextElementSibling;
+            const transform = element.style.transform;
+            const maxSwipe = 160;
+
+            // Вернуть анимацию
+            element.style.transition = 'transform 0.3s ease';
+            actions.style.transition = 'transform 0.3s ease';
+
+            if (transform.includes('-') && parseInt(transform.split('-')[1]) > 50) {
+                // Зафиксировать открытое состояние
+                element.style.transform = `translateX(-${maxSwipe}px)`;
+                actions.style.transform = `translateX(0)`;
+                activeSwipeElementWrapper = element.parentNode;
+            } else {
+                // Закрыть
+                element.style.transform = `translateX(0)`;
+                actions.style.transform = `translateX(${maxSwipe}px)`;
+                activeSwipeElementWrapper = null;
+            }
+        }
+
+        function closeSwipeActions(wrapper) {
+            if (wrapper) {
+                wrapper.children[0].style.transform = `translateX(160px)`; // Actions
+                wrapper.children[1].style.transform = `translateX(0)`; // Item
+                activeSwipeElementWrapper = null;
+            }
+        }
+
+        // --- ЛОГИКА ЗАЖАТИЯ КНОПКИ ЗАКРЫТИЯ СМЕНЫ ---
+        function setupHoldButton() {
+            const btn = document.getElementById('btn-close-shift');
+            const progress = btn.querySelector('.hold-progress');
+
+            // Очистка при перезапуске
+            isHolding = false;
+            progress.style.width = '0%';
+            btn.classList.remove('holding');
+
+            // Обработка событий
+            ['mousedown', 'touchstart'].forEach(eType => {
+                btn.addEventListener(eType, (e) => {
+                    e.preventDefault(); // Запрет контекстного меню
+                    isHolding = true;
+                    btn.classList.add('holding');
+                    progress.style.transition = `width ${holdTimeMs/1000}s linear`;
+                    progress.style.width = '100%';
+
+                    holdTimer = setTimeout(() => {
+                        if (isHolding) {
+                            finishShift(); // Завершить, если зажатие успешно
+                        }
+                    }, holdTimeMs);
+                });
+            });
+
+            ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach(eType => {
+                btn.addEventListener(eType, (e) => {
+                    clearTimeout(holdTimer);
+                    isHolding = false;
+                    btn.classList.remove('holding');
+                    progress.style.transition = 'width 0.1s linear';
+                    progress.style.width = '0%';
+                });
+            });
+        }
+
+        // --- ЗАКРЫТИЕ СМЕНЫ И ПОКАЗ ОТЧЕТА ---
+        function finishShift() {
+            if(receipt.length === 0 && totalSales === 0) {
+                if(!confirm("Чек пуст. Вы уверены, что хотите закрыть смену?")) return;
             }
 
-            let subtotal = receipt.reduce((sum, item) => sum + item.total, 0);
-            let discountAmount = subtotal * (discountPercent / 100);
-            let totalSales = subtotal - discountAmount;
-            let finalCash = initialCash + totalSales;
+            // Сумма по текущему чеку
+            let currentCheckRevenue = receipt.reduce((sum, item) => sum + item.total, 0);
+            
+            // Накопленная выручка за смену
+            let finalCheckRevenue = currentCheckRevenue; // В этой упрощенной версии 1 чек = 1 смена, если не делать "Новый чек"
+            let finalCash = initialCash + finalCheckRevenue;
 
             const now = new Date();
-            document.getElementById('rep-start-time').innerText = startTime;
-            document.getElementById('rep-end-time').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            document.getElementById('rep-start-cash').innerText = initialCash.toFixed(2);
-            document.getElementById('rep-sales').innerText = subtotal.toFixed(2);
-            document.getElementById('rep-discount').innerText = discountAmount.toFixed(2);
-            document.getElementById('rep-final-cash').innerText = finalCash.toFixed(2);
+            const endTime = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
-            if (notes.length > 0) {
-                document.getElementById('rep-notes-container').style.display = 'block';
-                const notesList = document.getElementById('rep-notes-list');
-                notesList.innerHTML = '';
-                notes.forEach(n => {
-                    notesList.innerHTML += `<li>${n}</li>`;
-                });
-            } else {
-                document.getElementById('rep-notes-container').style.display = 'none';
-            }
+            // Заполнение отчета
+            document.getElementById('rep-start-time').innerText = startTime;
+            document.getElementById('rep-end-time').innerText = endTime;
+            document.getElementById('rep-start-cash').innerText = initialCash.toFixed(2);
+            document.getElementById('rep-sales').innerText = finalCheckRevenue.toFixed(2);
+            document.getElementById('rep-check-revenue').innerText = currentCheckRevenue.toFixed(2);
+            document.getElementById('rep-final-cash').innerText = finalCash.toFixed(2);
 
             switchScreen('screen-report');
         }
 
-        function resetApp() {
-            // Для нового чека обновляем начальную кассу до фактической, чтобы продолжить смену
-            let subtotal = receipt.reduce((sum, item) => sum + item.total, 0);
-            let discountAmount = subtotal * (discountPercent / 100);
-            initialCash = initialCash + (subtotal - discountAmount);
-            
+        function resetShiftApp() {
+            // Полное обнуление для новой смены
             receipt = [];
-            discountPercent = 0;
-            notes = [];
+            totalSales = 0;
+            document.getElementById('start-cash').value = '';
             
-            document.getElementById('discount').value = '';
-            document.getElementById('notes-list').innerHTML = '';
-            
-            renderReceipt();
-            switchScreen('screen-pos');
+            switchScreen('screen-start');
         }
     </script>
 </body>
